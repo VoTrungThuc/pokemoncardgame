@@ -70,3 +70,7 @@ node_modules/
 dist/
 build-frontend/
 .eslintcache
+
+# Backup React Native Folder
+mobile_react_native/
+
