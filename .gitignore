@@ -71,10 +71,8 @@ dist/
 build-frontend/
 .eslintcache
 
-# Backup React Native Folder
-mobile_react_native/
-
 # Project Report
 PROJECT_REPORT.md
+
 
 
