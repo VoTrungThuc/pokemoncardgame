@@ -177,3 +177,9 @@ docker-compose down
    - Configure the environment variable:
      - `VITE_API_URL`: Your deployed backend service URL.
    - Railway will detect the `Dockerfile` inside the `frontend` folder and serve it via Nginx on port 80.
+  tài khoản đăng nhập 
+  user
+  password123
+
+  admin
+  admin123
