@@ -97,7 +97,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   // Order list summary card
                   const Text(
                     'Tóm tắt đơn hàng',
-                    style: TextStyle(fontWeight: FontWeight.black, fontSize: 14, color: Color(0xFF1E293B)),
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF1E293B)),
                   ),
                   const SizedBox(height: 12),
                   Card(
@@ -124,7 +124,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                     Text(
                                       '\$${item.subtotal.toStringAsFixed(2)}',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.black),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
                                     ),
                                   ],
                                 ),
@@ -139,7 +139,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ),
                               Text(
                                 '\$${cart.totalAmount.toStringAsFixed(2)}',
-                                style: const TextStyle(fontWeight: FontWeight.black, fontSize: 16, color: Color(0xFFE53935)),
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFFE53935)),
                               ),
                             ],
                           ),
@@ -152,7 +152,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   // Shipping Address
                   const Text(
                     'Địa chỉ giao hàng',
-                    style: TextStyle(fontWeight: FontWeight.black, fontSize: 14, color: Color(0xFF1E293B)),
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF1E293B)),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -191,7 +191,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     )
                   : const Text(
                       'XÁC NHẬN ĐẶT HÀNG',
-                      style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.8),
+                      style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
                     ),
             ),
           ),

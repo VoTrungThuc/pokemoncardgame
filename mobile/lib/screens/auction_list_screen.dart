@@ -51,7 +51,7 @@ class _AuctionListScreenState extends State<AuctionListScreen> {
                 children: [
                   Text(
                     auc.cardName,
-                    style: const TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -70,7 +70,7 @@ class _AuctionListScreenState extends State<AuctionListScreen> {
                           const Text('GIÁ ĐẤU HIỆN TẠI', style: TextStyle(fontSize: 8, color: Colors.grey, fontWeight: FontWeight.bold)),
                           Text(
                             '\$${auc.currentBid.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.black, fontSize: 16, color: Color(0xFFE53935)),
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFFE53935)),
                           ),
                         ],
                       ),

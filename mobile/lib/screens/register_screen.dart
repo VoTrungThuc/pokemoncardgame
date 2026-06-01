@@ -216,7 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         )
                       : const Text(
                           'HOÀN TẤT ĐĂNG KÝ',
-                          style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.8),
+                          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
                         ),
                 ),
               ],

@@ -66,7 +66,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               children: [
                 Text(
                   'Đơn hàng #${order.id}',
-                  style: const TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -121,7 +121,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 ),
                 Text(
                   '\$${order.totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.black, fontSize: 15, color: Color(0xFFE53935)),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFFE53935)),
                 ),
               ],
             ),

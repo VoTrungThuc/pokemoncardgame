@@ -60,7 +60,7 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> {
                 const SizedBox(height: 16),
                 const Text(
                   'Booster Pack Simulator',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 6),
                 const Text(
@@ -86,7 +86,7 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> {
               ] else ...[
                 const Text(
                   'Kết quả mở gói bài của bạn! 🎉',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.black),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 24),
                 // Horizontal list of drawn cards

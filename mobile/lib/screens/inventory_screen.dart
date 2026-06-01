@@ -79,7 +79,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     children: [
                                       Text(
                                         product.name,
-                                        style: const TextStyle(fontWeight: FontWeight.black, fontSize: 13),
+                                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),

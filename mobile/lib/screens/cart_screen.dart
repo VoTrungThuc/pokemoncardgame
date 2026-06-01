@@ -130,7 +130,7 @@ class _CartScreenState extends State<CartScreen> {
                                         const SizedBox(height: 6),
                                         Text(
                                           '\$${product.activePrice.toStringAsFixed(2)}',
-                                          style: const TextStyle(fontWeight: FontWeight.black, fontSize: 13, color: Color(0xFF1E293B)),
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF1E293B)),
                                         ),
                                       ],
                                     ),
@@ -209,7 +209,7 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                               Text(
                                 '\$${cart.totalAmount.toStringAsFixed(2)}',
-                                style: const TextStyle(fontWeight: FontWeight.black, fontSize: 20, color: Color(0xFF1E293B)),
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF1E293B)),
                               ),
                             ],
                           ),
@@ -225,7 +225,7 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                             child: const Text(
                               'ĐI ĐẾN THANH TOÁN',
-                              style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.8),
+                              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
                             ),
                           ),
                         ],

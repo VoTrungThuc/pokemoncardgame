@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24,
-                      fontWeight: FontWeight.black,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
                       color: Color(0xFF1E293B),
                     ),
@@ -176,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : const Text(
                             'ĐANG NHẬP TRAINER',
-                            style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.8),
+                            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
                           ),
                   ),
                   const SizedBox(height: 24),
@@ -195,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Đăng ký ngay',
                           style: TextStyle(
                             color: Color(0xFFE53935),
-                            fontWeight: FontWeight.black,
+                            fontWeight: FontWeight.w900,
                             decoration: TextDecoration.underline,
                           ),
                         ),

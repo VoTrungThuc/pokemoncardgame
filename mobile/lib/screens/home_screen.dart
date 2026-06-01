@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Trainer @$trainerName 👋',
                               style: const TextStyle(
                                 fontSize: 20,
-                                fontWeight: FontWeight.black,
+                                fontWeight: FontWeight.w900,
                                 color: Colors.white,
                               ),
                             ),
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.horizontal(18),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
                   itemCount: _categories.length,
                   itemBuilder: (context, idx) {
                     final cat = _categories[idx];

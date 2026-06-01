@@ -54,7 +54,7 @@ class _TradeDashboardScreenState extends State<TradeDashboardScreen> {
               children: [
                 Text(
                   isIncoming ? 'Yêu cầu từ @$otherTrainer' : 'Gửi đến @$otherTrainer',
-                  style: const TextStyle(fontWeight: FontWeight.black, fontSize: 13),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

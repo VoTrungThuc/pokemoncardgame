@@ -348,7 +348,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   )
                                 : const Text(
                                     'THÊM VÀO GIỎ HÀNG',
-                                    style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.8),
+                                    style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
                                   ),
                           ),
                         ),
@@ -363,7 +363,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       alignment: Alignment.center,
                       child: const Text(
                         'SẢN PHẨM HIỆN ĐÃ HẾT HÀNG',
-                        style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.black, letterSpacing: 0.8),
+                        style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w900, letterSpacing: 0.8),
                       ),
                     ),
             ),

@@ -39,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
                         username.substring(0, 2).toUpperCase(),
                         style: const TextStyle(
                           color: Color(0xFFE53935),
-                          fontWeight: FontWeight.black,
+                          fontWeight: FontWeight.w900,
                           fontSize: 20,
                         ),
                       ),
@@ -53,7 +53,7 @@ class ProfileScreen extends StatelessWidget {
                             username,
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.black,
+                              fontWeight: FontWeight.w900,
                               color: Color(0xFF1E293B),
                             ),
                           ),
@@ -145,7 +145,7 @@ class ProfileScreen extends StatelessWidget {
               icon: const Icon(Icons.logout, color: Colors.white, size: 16),
               label: const Text(
                 'ĐĂNG XUẤT TÀI KHOẢN',
-                style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.8),
+                style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE53935),
