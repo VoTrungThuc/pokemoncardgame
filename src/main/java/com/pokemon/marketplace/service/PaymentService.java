@@ -54,7 +54,7 @@ public class PaymentService {
         vnp_Params.put("vnp_OrderInfo", "ThanhToanDonHangPokemon" + orderId);
         vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", vnpConfig.getReturnUrl());
+        vnp_Params.put("vnp_ReturnUrl", getDynamicReturnUrl(request));
         vnp_Params.put("vnp_IpAddr", ipAddress);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -137,7 +137,7 @@ public class PaymentService {
         vnp_Params.put("vnp_OrderInfo", "NapTienTaiKhoanPokemon" + txnRef);
         vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", vnpConfig.getReturnUrl());
+        vnp_Params.put("vnp_ReturnUrl", getDynamicReturnUrl(request));
         vnp_Params.put("vnp_IpAddr", ipAddress);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -269,5 +269,16 @@ public class PaymentService {
             orderService.updateOrderStatus(orderId, OrderStatus.CANCELLED);
             return false;
         }
+    }
+
+    private String getDynamicReturnUrl(HttpServletRequest request) {
+        String returnUrl = vnpConfig.getReturnUrl();
+        if (request != null) {
+            String serverName = request.getServerName();
+            if (serverName != null && !serverName.equals("localhost") && !serverName.equals("127.0.0.1")) {
+                returnUrl = returnUrl.replace("localhost", serverName);
+            }
+        }
+        return returnUrl;
     }
 }
