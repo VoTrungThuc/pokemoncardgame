@@ -24,6 +24,7 @@ public class OrderMapper {
                 .shippingAddress(order.getShippingAddress())
                 .note(order.getNote())
                 .paymentMethod(order.getPaymentMethod())
+                .deliveryType(order.getDeliveryType())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .createdAt(order.getCreatedAt())

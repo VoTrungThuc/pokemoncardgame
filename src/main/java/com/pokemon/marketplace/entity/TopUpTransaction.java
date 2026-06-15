@@ -1,15 +1,16 @@
 package com.pokemon.marketplace.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "topup_transactions")
+@Document(collection = "topup_transactions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,15 +20,13 @@ public class TopUpTransaction {
     @Id
     private String id; 
 
-    @Column(name = "user_id", nullable = false)
+    @Field("user_id")
     private Long userId;
 
-    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount; 
 
-    @Column(nullable = false, length = 20)
     private String status; 
 
-    @Column(name = "created_at", nullable = false)
+    @Field("created_at")
     private LocalDateTime createdAt;
 }

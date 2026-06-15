@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/models/product.dart';
+import 'package:mobile/features/product/models/product.dart';
 
 void main() {
   testWidgets('Should render Pokémon Card information correctly in details UI card', (WidgetTester tester) async {

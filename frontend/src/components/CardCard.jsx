@@ -138,7 +138,7 @@ export default function CardCard({ card, onSelectCard, activeUser, onEditCard, o
 
   return (
     <div
-      className={`relative overflow-hidden group rounded-3xl bg-white border-2 ${getBorderColor()} shadow-premium hover:shadow-premium-hover hover:-translate-y-1.5 transition-all duration-500 ease-out flex flex-col h-full cursor-pointer`}
+      className={`relative overflow-hidden group rounded-3xl bg-white border-2 ${getBorderColor()} shadow-premium card-lift flex flex-col h-full cursor-pointer`}
       onClick={() => onSelectCard(card.id)}
     >
       
@@ -162,35 +162,47 @@ export default function CardCard({ card, onSelectCard, activeUser, onEditCard, o
         )}
       </div>
 
-      {}
-      <div className="mx-3 mt-11 aspect-[2.5/2.8] rounded-2xl bg-gray-50 group-hover:bg-white flex items-center justify-center overflow-hidden border border-gray-150 relative shadow-inner transition-colors duration-500">
+      <div className="mx-3 mt-11 aspect-[2.5/2.8] rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100/50 group-hover:from-white group-hover:to-gray-50 flex items-center justify-center overflow-hidden border border-gray-150 relative shadow-inner transition-all duration-500">
         <img
           src={card.imageUrl}
           alt={card.name}
-          className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out"
+          className="w-full h-full object-contain p-2 group-hover:scale-108 transition-transform duration-600 ease-out"
+          style={{ transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
           onError={(e) => {
             e.target.onerror = null;
-            
             e.target.src = isNonCard ? '/images/booster_box_151.png' : 'https://images.pokemontcg.io/xy12/1.png';
           }}
         />
 
-        {}
         {card.stock <= 0 && (
-          <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center">
-            <span className="bg-black/80 text-white font-black text-xs px-3.5 py-1.5 rounded uppercase tracking-widest shadow-md">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="bg-black/85 text-white font-black text-xs px-3.5 py-1.5 rounded-lg uppercase tracking-widest shadow-md border border-white/10">
               Hết Hàng
             </span>
           </div>
         )}
 
-        {}
-        {!isNonCard && card.ram && (card.ram.toLowerCase().includes('holo') || card.ram.toLowerCase().includes('vmax') || card.ram.toLowerCase().includes('secret')) && (
+        {!isNonCard && card.ram && (
+          card.ram.toLowerCase().includes('holo') ||
+          card.ram.toLowerCase().includes('vmax') ||
+          card.ram.toLowerCase().includes('vstar') ||
+          card.ram.toLowerCase().includes('secret') ||
+          card.ram.toLowerCase().includes('special art') ||
+          card.ram.toLowerCase().includes('gold star') ||
+          card.ram.toLowerCase().includes('illustrator')
+        ) && (
           <div className="holographic-shine" />
+        )}
+
+        {hasPromo && (
+          <div className="absolute top-0 right-0">
+            <div className="bg-[#e53935] text-white text-[8px] font-black px-2 py-0.5 rounded-bl-xl rounded-tr-xl shadow-sm uppercase tracking-wider">
+              SALE
+            </div>
+          </div>
         )}
       </div>
 
-      {}
       <div className="p-3 flex-grow flex flex-col justify-between">
         <div>
           <h3 className="font-extrabold text-gray-900 text-sm line-clamp-2 leading-snug group-hover:text-[#e53935] transition-colors duration-200 h-10 overflow-hidden" title={card.name}>
@@ -232,8 +244,7 @@ export default function CardCard({ card, onSelectCard, activeUser, onEditCard, o
           </div>
         </div>
 
-        {}
-        <div className="mt-3 pt-2.5 border-t border-gray-150 flex items-center justify-between">
+        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-widest">Giá bán</span>
             <div className="flex flex-wrap items-baseline gap-x-1.5">
@@ -241,6 +252,9 @@ export default function CardCard({ card, onSelectCard, activeUser, onEditCard, o
                 <>
                   <span className="text-sm font-black text-[#e53935]">${formattedPromoPrice}</span>
                   <span className="text-[9px] text-gray-400 line-through">${formattedPrice}</span>
+                  <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-100">
+                    -{Math.round((1 - card.promoPrice/card.price)*100)}%
+                  </span>
                 </>
               ) : (
                 <span className="text-sm font-black text-gray-900">${formattedPrice}</span>
@@ -386,17 +400,17 @@ export default function CardCard({ card, onSelectCard, activeUser, onEditCard, o
                 
                 {card.stock > 0 ? (
                   <button
-                    className="px-3 py-1 rounded-lg text-xs font-black bg-[#e53935] hover:bg-[#d32f2f] text-white shadow-sm transition-all cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-[#e53935] hover:bg-[#d32f2f] text-white shadow-md shadow-red-100 transition-all cursor-pointer btn-press hover:shadow-lg hover:shadow-red-200 animate-pulse-red"
                     onClick={handleAddToCart}
                   >
-                    MUA
+                    🛒 MUA
                   </button>
                 ) : (
                   <button
-                    className="px-2.5 py-1 rounded-lg text-xs font-black bg-gray-300 text-gray-500 border border-gray-350 cursor-not-allowed"
+                    className="px-2.5 py-1 rounded-lg text-xs font-black bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                     disabled
                   >
-                    LIÊN HỆ
+                    Hết hàng
                   </button>
                 )}
               </>

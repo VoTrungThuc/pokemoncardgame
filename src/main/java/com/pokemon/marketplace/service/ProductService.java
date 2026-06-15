@@ -13,6 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.support.PageableExecutionUtils;
+import org.bson.Document;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,13 +26,40 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final MongoTemplate mongoTemplate;
 
-    @Transactional(readOnly = true)
     public Page<ProductDTO> getFilteredProducts(
             String name, String brand, BigDecimal minPrice, BigDecimal maxPrice,
             Boolean isAvailable, Boolean isPromo, Pageable pageable) {
         log.info("Filtering products by Name: {}, Brand: {}, Price Range: [{}, {}]", name, brand, minPrice, maxPrice);
-        return productRepository.filterProducts(name, brand, minPrice, maxPrice, isAvailable, isPromo, pageable)
+        
+        Query query = new Query();
+        
+        if (name != null && !name.trim().isEmpty()) {
+            query.addCriteria(Criteria.where("name").regex(name, "i"));
+        }
+        if (brand != null && !brand.trim().isEmpty()) {
+            query.addCriteria(Criteria.where("pokemon_name").regex("^" + brand + "$", "i"));
+        }
+        if (minPrice != null) {
+            query.addCriteria(Criteria.where("price").gte(minPrice));
+        }
+        if (maxPrice != null) {
+            query.addCriteria(Criteria.where("price").lte(maxPrice));
+        }
+        if (isAvailable != null) {
+            query.addCriteria(Criteria.where("is_available").is(isAvailable));
+        }
+        if (isPromo != null && isPromo) {
+            query.addCriteria(Criteria.where("promo_price").ne(null));
+            query.addCriteria(Criteria.where("$expr").is(new Document("$lt", java.util.List.of("$promo_price", "$price"))));
+        }
+        
+        long total = mongoTemplate.count(query, Product.class);
+        query.with(pageable);
+        java.util.List<Product> list = mongoTemplate.find(query, Product.class);
+        
+        return PageableExecutionUtils.getPage(list, pageable, () -> total)
                 .map(productMapper::toDTO);
     }
 

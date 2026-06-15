@@ -28,10 +28,12 @@ public class ListingService {
     private final ProductRepository productRepository;
     private final ListingMapper listingMapper;
 
-    @Transactional(readOnly = true)
     public List<ListingDTO> getAllListings(boolean availableOnly) {
         log.info("Fetching all listings. Available only: {}", availableOnly);
-        return listingRepository.findAllListings(availableOnly).stream()
+        List<Listing> list = availableOnly 
+                ? listingRepository.findByIsAvailable(true) 
+                : listingRepository.findAll();
+        return list.stream()
                 .map(listingMapper::toDTO)
                 .collect(Collectors.toList());
     }

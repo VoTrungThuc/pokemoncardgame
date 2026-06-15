@@ -1,15 +1,11 @@
 package com.pokemon.marketplace.repository;
 
 import com.pokemon.marketplace.entity.Notification;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    
-    @Query("SELECT n FROM Notification n WHERE n.user.id IS NULL OR n.user.id = :userId ORDER BY n.createdAt DESC")
-    List<Notification> findByUserIdOrGlobal(@Param("userId") Long userId);
+public interface NotificationRepository extends MongoRepository<Notification, Long> {
+    List<Notification> findByUserIsNullOrUser_IdOrderByCreatedAtDesc(Long userId);
 }

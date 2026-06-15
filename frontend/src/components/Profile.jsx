@@ -41,9 +41,15 @@ export default function Profile({ activeUser }) {
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       {}
       <div className="bg-white border border-gray-150 rounded-[32px] p-8 shadow-premium flex flex-col md:flex-row items-center gap-6 transition-all duration-300 hover:border-red-100/50 hover:shadow-premium-hover">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#e53935] to-red-500 flex items-center justify-center text-3xl font-black text-white shadow-md border-[3px] border-white ring-4 ring-red-100 transition-transform duration-300 hover:scale-105">
-          {activeUser.username ? activeUser.username.substring(0, 2).toUpperCase() : 'US'}
-        </div>
+        {isAdmin ? (
+          <div className="w-20 h-20 rounded-full overflow-hidden shadow-md border-[3px] border-white ring-4 ring-red-100 transition-transform duration-300 hover:scale-105 bg-white">
+            <img src="/images/admin_logo.png" alt="Admin Logo" className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#e53935] to-red-500 flex items-center justify-center text-3xl font-black text-white shadow-md border-[3px] border-white ring-4 ring-red-100 transition-transform duration-300 hover:scale-105">
+            {activeUser.username ? activeUser.username.substring(0, 2).toUpperCase() : 'US'}
+          </div>
+        )}
         
         <div className="text-center md:text-left space-y-1.5 flex-grow">
           <h2 className="text-2xl font-black text-gray-900">@{activeUser.username}</h2>

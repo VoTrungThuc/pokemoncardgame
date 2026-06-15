@@ -1,18 +1,20 @@
 package com.pokemon.marketplace.entity;
 
 import com.pokemon.marketplace.entity.enums.OrderStatus;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "orders")
+@Document(collection = "orders")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,38 +22,35 @@ import java.util.List;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @DBRef(lazy = true)
     private User user;
 
-    @Column(name = "recipient_name", nullable = false)
+    @Field("recipient_name")
     private String recipientName;
 
-    @Column(nullable = false)
     private String phone;
 
-    @Column(name = "shipping_address", nullable = false)
+    @Field("shipping_address")
     private String shippingAddress;
 
     private String note;
 
-    @Column(name = "payment_method", nullable = false)
+    @Field("payment_method")
     private String paymentMethod;
 
-    @Column(name = "total_amount", nullable = false)
+    @Field("delivery_type")
+    private String deliveryType; // "ONLINE_COLLECTION" or "PHYSICAL_SHIPPING"
+
+    @Field("total_amount")
     private BigDecimal totalAmount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private OrderStatus status;
 
-    @Column(name = "created_at", nullable = false)
+    @Field("created_at")
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 }

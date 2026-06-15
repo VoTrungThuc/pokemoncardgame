@@ -20,6 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.pokemon.marketplace.entity.OtpVerification;
+import com.pokemon.marketplace.repository.OtpVerificationRepository;
+import com.pokemon.marketplace.service.MailService;
+import java.time.LocalDateTime;
+import java.util.Random;
 
 @Slf4j
 @RestController
@@ -32,27 +37,87 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+    private final OtpVerificationRepository otpVerificationRepository;
+    private final MailService mailService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest request) {
         log.info("REST request to register user: {}", request.getUsername());
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        String email = request.getEmail().trim().toLowerCase();
+        String username = request.getUsername().trim();
+
+        if (userRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username is already taken");
         }
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email is already registered");
         }
 
-        User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
+        // Generate 6-digit OTP
+        String otp = String.format("%06d", new Random().nextInt(1000000));
+
+        // Clean up previous registration attempts for this email/username to avoid duplicate keys
+        otpVerificationRepository.findByEmail(email).ifPresent(otpVerificationRepository::delete);
+        otpVerificationRepository.findByUsername(username).ifPresent(otpVerificationRepository::delete);
+
+        // Save unverified user details and OTP
+        OtpVerification verification = OtpVerification.builder()
+                .username(username)
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .shippingAddress(request.getShippingAddress())
+                .otpCode(otp)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+
+        otpVerificationRepository.save(verification);
+
+        // Send OTP
+        mailService.sendOtpEmail(email, username, otp);
+
+        UserDTO responseDTO = UserDTO.builder()
+                .username(username)
+                .email(email)
+                .build();
+
+        return new ResponseEntity<>(ApiResponse.success(responseDTO, "Mã OTP đã được gửi đến email của bạn. Vui lòng xác thực."), HttpStatus.OK);
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse<UserDTO>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        log.info("REST request to verify OTP for email: {}", email);
+        OtpVerification verification = otpVerificationRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin đăng ký cho email này"));
+
+        if (!verification.getOtpCode().equals(request.getOtp())) {
+            throw new IllegalArgumentException("Mã OTP không chính xác");
+        }
+
+        if (verification.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Mã OTP đã hết hạn");
+        }
+
+        if (userRepository.findByUsername(verification.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại");
+        }
+        if (userRepository.findByEmail(verification.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email đã được đăng ký");
+        }
+
+        User user = User.builder()
+                .username(verification.getUsername())
+                .email(verification.getEmail())
+                .password(verification.getPassword()) // Already encoded
+                .phone(verification.getPhone())
+                .shippingAddress(verification.getShippingAddress())
                 .role(UserRole.USER)
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        otpVerificationRepository.delete(verification);
 
         UserDTO responseDTO = UserDTO.builder()
                 .id(savedUser.getId())
@@ -63,19 +128,22 @@ public class AuthController {
                 .role(savedUser.getRole())
                 .build();
 
-        return new ResponseEntity<>(ApiResponse.success(responseDTO, "User registered successfully"), HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(responseDTO, "Xác thực OTP thành công. Tài khoản đã được tạo!"), HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest request) {
         log.info("REST request to login user: {}", request.getUsername());
+        String loginInput = request.getUsername().trim();
+        String lookupEmail = loginInput.toLowerCase();
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(loginInput, request.getPassword())
         );
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .or(() -> userRepository.findByEmail(request.getUsername()))
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + request.getUsername()));
+        User user = userRepository.findByUsername(loginInput)
+                .or(() -> userRepository.findByEmail(lookupEmail))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + loginInput));
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
@@ -87,6 +155,7 @@ public class AuthController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .balance(user.getBalance() != null ? user.getBalance() : 0.0)
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));

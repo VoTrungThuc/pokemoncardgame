@@ -40,6 +40,7 @@ public class UserController {
                         .phone(user.getPhone())
                         .shippingAddress(user.getShippingAddress())
                         .role(user.getRole())
+                        .balance(user.getBalance())
                         .build())
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(userDTOs, "Fetched all users successfully"));
@@ -49,16 +50,19 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserDTO>> createAdmin(@Valid @RequestBody RegisterRequest request) {
         log.info("REST request to create admin by Admin: {}", request.getUsername());
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        String email = request.getEmail().trim().toLowerCase();
+        String username = request.getUsername().trim();
+
+        if (userRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username is already taken");
         }
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email is already registered");
         }
 
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
+                .username(username)
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .shippingAddress(request.getShippingAddress())
@@ -74,6 +78,7 @@ public class UserController {
                 .phone(savedUser.getPhone())
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
+                .balance(savedUser.getBalance())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Admin created successfully"));
@@ -99,8 +104,107 @@ public class UserController {
                 .phone(savedUser.getPhone())
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
+                .balance(savedUser.getBalance())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "User role updated successfully"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDTO>> getProfile() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        UserDTO responseDTO = UserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .shippingAddress(user.getShippingAddress())
+                .role(user.getRole())
+                .balance(user.getBalance() != null ? user.getBalance() : 0.0)
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(responseDTO, "Profile fetched successfully"));
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<ApiResponse<UserDTO>> deposit(@RequestParam Double amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!"user".equals(username)) {
+            throw new IllegalArgumentException("Tài khoản của bạn không được phép nạp tiền trực tiếp. Vui lòng nạp qua VNPay QR!");
+        }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        user.setBalance((user.getBalance() != null ? user.getBalance() : 0.0) + amount);
+        User savedUser = userRepository.save(user);
+        
+        UserDTO responseDTO = UserDTO.builder()
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .email(savedUser.getEmail())
+                .phone(savedUser.getPhone())
+                .shippingAddress(savedUser.getShippingAddress())
+                .role(savedUser.getRole())
+                .balance(savedUser.getBalance())
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(responseDTO, "Deposited " + amount + " successfully"));
+    }
+
+    @PostMapping("/refund")
+    public ResponseEntity<ApiResponse<UserDTO>> refund(@RequestParam Double amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        user.setBalance((user.getBalance() != null ? user.getBalance() : 0.0) + amount);
+        User savedUser = userRepository.save(user);
+        
+        UserDTO responseDTO = UserDTO.builder()
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .email(savedUser.getEmail())
+                .phone(savedUser.getPhone())
+                .shippingAddress(savedUser.getShippingAddress())
+                .role(savedUser.getRole())
+                .balance(savedUser.getBalance())
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(responseDTO, "Refunded " + amount + " successfully"));
+    }
+
+    @PostMapping("/deduct")
+    public ResponseEntity<ApiResponse<UserDTO>> deduct(@RequestParam Double amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
+        if (currentBalance < amount) {
+            throw new IllegalStateException("Số dư không đủ để thực hiện giao dịch.");
+        }
+        
+        user.setBalance(currentBalance - amount);
+        User savedUser = userRepository.save(user);
+        
+        UserDTO responseDTO = UserDTO.builder()
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .email(savedUser.getEmail())
+                .phone(savedUser.getPhone())
+                .shippingAddress(savedUser.getShippingAddress())
+                .role(savedUser.getRole())
+                .balance(savedUser.getBalance())
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(responseDTO, "Deducted " + amount + " successfully"));
     }
 }

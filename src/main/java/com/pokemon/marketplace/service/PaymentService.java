@@ -7,6 +7,8 @@ import com.pokemon.marketplace.entity.enums.OrderStatus;
 import com.pokemon.marketplace.exception.ResourceNotFoundException;
 import com.pokemon.marketplace.repository.OrderRepository;
 import com.pokemon.marketplace.repository.TopUpTransactionRepository;
+import com.pokemon.marketplace.repository.UserRepository;
+import com.pokemon.marketplace.entity.User;
 import java.time.LocalDateTime;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
     private final TopUpTransactionRepository topUpTransactionRepository;
+    private final UserRepository userRepository;
 
     private static final BigDecimal EXCHANGE_RATE_USD_VND = new BigDecimal("25000");
 
@@ -244,10 +247,26 @@ public class PaymentService {
                 return false;
             }
             TopUpTransaction transaction = transactionOpt.get();
+            if ("SUCCESS".equals(transaction.getStatus())) {
+                log.info("Top-up transaction {} was already processed successfully", txnRef);
+                return true;
+            }
             if ("00".equals(responseCode)) {
                 log.info("VNPay Payment SUCCESS for Top-Up ID: {}", txnRef);
                 transaction.setStatus("SUCCESS");
                 topUpTransactionRepository.save(transaction);
+                
+                // Credit the user's balance
+                Optional<User> userOpt = userRepository.findById(transaction.getUserId());
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    user.setBalance((user.getBalance() != null ? user.getBalance() : 0.0) + transaction.getAmount().doubleValue());
+                    userRepository.save(user);
+                    log.info("Credited User ID {} with amount {} USD via VNPay. New balance: {}", user.getId(), transaction.getAmount(), user.getBalance());
+                } else {
+                    log.error("User ID {} not found for top-up transaction {}", transaction.getUserId(), txnRef);
+                }
+                
                 return true;
             } else {
                 log.warn("VNPay Payment FAILED/CANCELLED for Top-Up ID: {} with response code: {}", txnRef, responseCode);

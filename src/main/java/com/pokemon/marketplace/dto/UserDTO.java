@@ -17,4 +17,5 @@ public class UserDTO {
     private String phone;
     private String shippingAddress;
     private UserRole role;
+    private Double balance;
 }

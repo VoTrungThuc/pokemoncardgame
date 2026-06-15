@@ -8,6 +8,8 @@ import com.pokemon.marketplace.exception.ResourceNotFoundException;
 import com.pokemon.marketplace.mapper.AuctionMapper;
 import com.pokemon.marketplace.repository.AuctionRepository;
 import com.pokemon.marketplace.repository.AuctionBidRepository;
+import com.pokemon.marketplace.repository.UserRepository;
+import com.pokemon.marketplace.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class AuctionService {
 
     private final AuctionRepository auctionRepository;
     private final AuctionBidRepository auctionBidRepository;
+    private final UserRepository userRepository;
     private final AuctionMapper auctionMapper;
 
     @Transactional
@@ -61,6 +64,14 @@ public class AuctionService {
     @Transactional
     public AuctionDTO placeBid(Long id, BigDecimal amount, String username) {
         log.info("User {} placing bid: ${} on auction ID: {}", username, amount, id);
+        
+        String cleanUsername = username.startsWith("@") ? username.substring(1) : username;
+        User userObj = userRepository.findByUsername(cleanUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + cleanUsername));
+        if (userObj.getRole() == com.pokemon.marketplace.entity.enums.UserRole.ADMIN) {
+            throw new IllegalStateException("Admin không được phép tham gia đấu giá thẻ bài!");
+        }
+
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + id));
 
@@ -150,7 +161,7 @@ public class AuctionService {
                 .currentBid(new BigDecimal("260.00"))
                 .highestBidder("-")
                 .bidsCount(0)
-                .endTime(now.plusMinutes(3))
+                .endTime(now.plusHours(24))
                 .status("active")
                 .createdByAdmin(false)
                 .bidHistory(new ArrayList<>())
@@ -164,7 +175,7 @@ public class AuctionService {
                 .currentBid(new BigDecimal("145.00"))
                 .highestBidder("-")
                 .bidsCount(0)
-                .endTime(now.plusMinutes(5))
+                .endTime(now.plusHours(36))
                 .status("active")
                 .createdByAdmin(false)
                 .bidHistory(new ArrayList<>())
@@ -178,7 +189,7 @@ public class AuctionService {
                 .currentBid(new BigDecimal("165.00"))
                 .highestBidder("-")
                 .bidsCount(0)
-                .endTime(now.plusMinutes(7))
+                .endTime(now.plusHours(48))
                 .status("active")
                 .createdByAdmin(false)
                 .bidHistory(new ArrayList<>())
@@ -192,7 +203,7 @@ public class AuctionService {
                 .currentBid(new BigDecimal("130.00"))
                 .highestBidder("-")
                 .bidsCount(0)
-                .endTime(now.plusMinutes(10))
+                .endTime(now.plusHours(72))
                 .status("active")
                 .createdByAdmin(false)
                 .bidHistory(new ArrayList<>())
@@ -200,5 +211,16 @@ public class AuctionService {
 
         List<Auction> saved = auctionRepository.saveAll(defaults);
         return saved.stream().map(auctionMapper::toDTO).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public AuctionDTO endAuction(Long id) {
+        log.info("Force ending auction ID: {}", id);
+        Auction auction = auctionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with ID: " + id));
+        auction.setStatus("ended");
+        auction.setEndTime(LocalDateTime.now().minusMinutes(5));
+        Auction saved = auctionRepository.save(auction);
+        return auctionMapper.toDTO(saved);
     }
 }

@@ -1,6 +1,7 @@
 package com.pokemon.marketplace.controller;
 
 import com.pokemon.marketplace.dto.ApiResponse;
+import com.pokemon.marketplace.dto.GachaRedeemRequest;
 import com.pokemon.marketplace.dto.OrderCreateRequest;
 import com.pokemon.marketplace.dto.OrderDTO;
 import com.pokemon.marketplace.entity.User;
@@ -75,5 +76,14 @@ public class OrderController {
         log.info("REST request by User ID: {} to cancel order ID: {}", userId, id);
         OrderDTO cancelled = orderService.cancelOrder(id, userId);
         return ResponseEntity.ok(ApiResponse.success(cancelled, "Order cancelled successfully"));
+    }
+
+    @PostMapping("/gacha-redeem")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<OrderDTO>> redeemGachaCards(@Valid @RequestBody GachaRedeemRequest request) {
+        Long userId = getAuthenticatedUserId();
+        log.info("REST request by User ID: {} to redeem Gacha cards", userId);
+        OrderDTO order = orderService.redeemGachaCards(userId, request);
+        return new ResponseEntity<>(ApiResponse.success(order, "Đơn nhận thẻ đã được tạo thành công"), HttpStatus.CREATED);
     }
 }

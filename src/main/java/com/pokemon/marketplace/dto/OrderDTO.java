@@ -21,6 +21,7 @@ public class OrderDTO {
     private String shippingAddress;
     private String note;
     private String paymentMethod;
+    private String deliveryType;
     private BigDecimal totalAmount;
     private OrderStatus status;
     private LocalDateTime createdAt;

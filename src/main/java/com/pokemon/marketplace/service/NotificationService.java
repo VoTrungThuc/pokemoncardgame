@@ -20,10 +20,9 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
 
-    @Transactional(readOnly = true)
     public List<NotificationDTO> getNotificationsForUser(Long userId) {
         log.info("Fetching notifications for User ID: {}", userId);
-        return notificationRepository.findByUserIdOrGlobal(userId).stream()
+        return notificationRepository.findByUserIsNullOrUser_IdOrderByCreatedAtDesc(userId).stream()
                 .map(notificationMapper::toDTO)
                 .collect(Collectors.toList());
     }

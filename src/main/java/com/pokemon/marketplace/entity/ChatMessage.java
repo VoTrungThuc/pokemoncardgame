@@ -1,14 +1,16 @@
 package com.pokemon.marketplace.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "chat_messages")
+@Document(collection = "chat_messages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,23 +18,19 @@ import java.time.LocalDateTime;
 public class ChatMessage {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @DBRef(lazy = true)
     private User user;
 
-    @Column(nullable = false)
     private String sender; 
 
-    @Column(nullable = false, length = 1000)
     private String message;
 
-    @Column(name = "is_auto_reply", nullable = false)
+    @Field("is_auto_reply")
     @Builder.Default
     private boolean isAutoReply = false;
 
-    @Column(name = "created_at", nullable = false)
+    @Field("created_at")
     private LocalDateTime createdAt;
 }

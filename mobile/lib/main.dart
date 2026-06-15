@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
-import 'providers/cart_provider.dart';
-import 'providers/market_provider.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/product_detail_screen.dart';
-import 'screens/checkout_screen.dart';
-import 'screens/pack_simulator_screen.dart';
-import 'screens/my_collection_screen.dart';
-import 'screens/auction_list_screen.dart';
-import 'screens/trade_dashboard_screen.dart';
-import 'screens/location_list_screen.dart';
-import 'screens/notification_list_screen.dart';
+import 'package:mobile/core/themes/app_theme.dart';
+import 'package:mobile/core/constants/app_routes.dart';
+import 'package:mobile/core/constants/app_strings.dart';
+import 'package:mobile/core/constants/app_colors.dart';
+import 'package:mobile/features/auth/providers/auth_provider.dart';
+import 'package:mobile/features/cart/providers/cart_provider.dart';
+import 'package:mobile/features/product/providers/market_provider.dart';
+import 'package:mobile/features/auth/screens/login_screen.dart';
+import 'package:mobile/features/auth/screens/register_screen.dart';
+import 'package:mobile/features/dashboard/screens/dashboard_screen.dart';
+import 'package:mobile/features/product/screens/product_detail_screen.dart';
+import 'package:mobile/features/cart/screens/checkout_screen.dart';
+import 'package:mobile/features/gacha/screens/pack_simulator_screen.dart';
+import 'package:mobile/features/gacha/screens/my_collection_screen.dart';
+import 'package:mobile/features/auction/screens/auction_list_screen.dart';
+import 'package:mobile/features/trade/screens/trade_dashboard_screen.dart';
+import 'package:mobile/features/location/screens/location_list_screen.dart';
+import 'package:mobile/features/notification/screens/notification_list_screen.dart';
+import 'package:mobile/features/auction/screens/auction_detail_screen.dart';
+import 'package:mobile/features/auction/screens/sales_stats_screen.dart';
+import 'package:mobile/features/auction/screens/create_auction_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,43 +40,14 @@ class MyApp extends StatelessWidget {
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           return MaterialApp(
-            title: 'PokeCard Store',
+            title: AppStrings.appName,
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFE53935),
-                primary: const Color(0xFFE53935),
-                secondary: const Color(0xFFD32F2F),
-                surface: Colors.white,
-                background: const Color(0xFFF8FAFC),
-              ),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.white,
-                foregroundColor: Color(0xFF1E293B),
-                elevation: 0,
-                centerTitle: true,
-                titleTextStyle: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: const Color(0xFFF1F5F9),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              ),
-            ),
+            theme: AppTheme.lightTheme,
             home: auth.isLoading
                 ? const Scaffold(
                     body: Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFFE53935),
+                        color: AppColors.primary,
                       ),
                     ),
                   )
@@ -77,22 +55,30 @@ class MyApp extends StatelessWidget {
                     ? const DashboardScreen()
                     : const LoginScreen(),
             routes: {
-              '/login': (context) => const LoginScreen(),
-              '/register': (context) => const RegisterScreen(),
-              '/dashboard': (context) => const DashboardScreen(),
-              '/checkout': (context) => const CheckoutScreen(),
-              '/pack-simulator': (context) => const PackSimulatorScreen(),
-              '/my-collection': (context) => const MyCollectionScreen(),
-              '/auctions': (context) => const AuctionListScreen(),
-              '/trades': (context) => const TradeDashboardScreen(),
-              '/locations': (context) => const LocationListScreen(),
-              '/notifications': (context) => const NotificationListScreen(),
+              AppRoutes.login: (context) => const LoginScreen(),
+              AppRoutes.register: (context) => const RegisterScreen(),
+              AppRoutes.dashboard: (context) => const DashboardScreen(),
+              AppRoutes.checkout: (context) => const CheckoutScreen(),
+              AppRoutes.packSimulator: (context) => const PackSimulatorScreen(),
+              AppRoutes.myCollection: (context) => const MyCollectionScreen(),
+              AppRoutes.auctions: (context) => const AuctionListScreen(),
+              AppRoutes.trades: (context) => const TradeDashboardScreen(),
+              AppRoutes.locations: (context) => const LocationListScreen(),
+              AppRoutes.notifications: (context) => const NotificationListScreen(),
+              AppRoutes.salesStats: (context) => const SalesStatsScreen(),
+              AppRoutes.createAuction: (context) => const CreateAuctionScreen(),
             },
             onGenerateRoute: (settings) {
-              if (settings.name == '/product-detail') {
+              if (settings.name == AppRoutes.productDetail) {
                 final args = settings.arguments as int;
                 return MaterialPageRoute(
                   builder: (context) => ProductDetailScreen(productId: args),
+                );
+              }
+              if (settings.name == AppRoutes.auctionDetail) {
+                final args = settings.arguments as int;
+                return MaterialPageRoute(
+                  builder: (context) => AuctionDetailScreen(auctionId: args),
                 );
               }
               return null;

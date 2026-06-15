@@ -1,14 +1,15 @@
 package com.pokemon.marketplace.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "products")
+@Document(collection = "products")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,60 +17,44 @@ import java.math.BigDecimal;
 public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String name;
 
-    
-    @Column(name = "pokemon_name", nullable = false)
+    @Field("pokemon_name")
     private String brand;
 
-    @Column(name = "image_url")
+    @Field("image_url")
     private String imageUrl;
 
-    @Column(nullable = false)
     private BigDecimal price;
 
-    @Column(name = "promo_price")
+    @Field("promo_price")
     private BigDecimal promoPrice;
 
-    @Column(length = 2000)
     private String description;
 
-    
     private String ram;
 
-    
     private String rom;
 
-    
     private String cpu;
 
-    
     private String camera;
 
-    
     private String battery;
 
-    
     private String screen;
 
-    
     private String os;
 
-    @Column(nullable = false)
     private Integer stock;
 
-    @Column(name = "is_available", nullable = false)
+    @Field("is_available")
     private Boolean isAvailable;
 
-    @Column(name = "score")
     private Double score;
 
-    @PrePersist
-    @PreUpdate
     public void calculateScore() {
         if (this.price == null) {
             this.score = 1.0;

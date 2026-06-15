@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Criteria;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final ChatMessageMapper chatMessageMapper;
     private final UserMapper userMapper;
+    private final MongoTemplate mongoTemplate;
 
     private static final List<String> AUTO_REPLIES = Arrays.asList(
             "Xin chào Trainer! Chào mừng đến với PokeCard Store 🎴 Bạn đang tìm kiếm thẻ bài Pokemon nào? Chúng tôi có hơn 35 loại thẻ từ Common đến Illustrator, bao gồm VMAX, VSTAR, Gold Star và thẻ Base Set gốc từ 1999!",
@@ -39,7 +44,6 @@ public class ChatService {
 
     private static final String DEFAULT_REPLY = "Cảm ơn Trainer đã liên hệ! Admin của PokeCard Store đã nhận được tin nhắn và sẽ chat trực tiếp với bạn ngay lập tức. Trong lúc chờ đợi, bạn có thể hỏi về các chủ đề tự động như: 'giao hàng', 'chính hãng', hoặc 'khuyến mãi' để được phản hồi tức thì nhé!";
 
-    @Transactional(readOnly = true)
     public List<ChatMessageDTO> getChatMessages(Long userId) {
         log.info("Fetching chat history for User ID: {}", userId);
         return chatMessageRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
@@ -47,10 +51,11 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<UserDTO> getChatUsers() {
         log.info("Fetching distinct customer users with chat history");
-        return chatMessageRepository.findDistinctUsersWithMessages().stream()
+        List<Long> userIds = mongoTemplate.findDistinct(new Query(), "user.$id", ChatMessage.class, Long.class);
+        List<User> users = mongoTemplate.find(new Query(Criteria.where("id").in(userIds)), User.class);
+        return users.stream()
                 .filter(u -> u.getRole() != UserRole.ADMIN)
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());

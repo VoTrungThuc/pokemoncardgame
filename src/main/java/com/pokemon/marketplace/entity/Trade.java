@@ -1,15 +1,17 @@
 package com.pokemon.marketplace.entity;
 
 import com.pokemon.marketplace.entity.enums.TradeStatus;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "trades")
+@Document(collection = "trades")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,29 +19,22 @@ import java.time.LocalDateTime;
 public class Trade {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "from_user_id", nullable = false)
+    @DBRef(lazy = true)
     private User fromUser;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "to_user_id", nullable = false)
+    @DBRef(lazy = true)
     private User toUser;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "offered_card_id", nullable = false)
+    @DBRef(lazy = true)
     private Product offeredCard;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requested_card_id", nullable = false)
+    @DBRef(lazy = true)
     private Product requestedCard;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TradeStatus status;
 
-    @Column(name = "created_at", nullable = false)
+    @Field("created_at")
     private LocalDateTime createdAt;
 }

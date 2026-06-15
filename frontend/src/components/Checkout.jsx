@@ -9,7 +9,8 @@ export default function Checkout({ onBackToCart, onOrderSuccess }) {
     phone: '',
     shippingAddress: '',
     note: '',
-    paymentMethod: 'COD'
+    paymentMethod: 'COD',
+    deliveryType: 'ONLINE_COLLECTION'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,8 @@ export default function Checkout({ onBackToCart, onOrderSuccess }) {
   };
 
   const validate = () => {
+    if (formData.deliveryType === 'ONLINE_COLLECTION') return true;
+
     if (!formData.recipientName.trim()) {
       setError('Vui lòng nhập họ tên người nhận.');
       return false;
@@ -54,11 +57,12 @@ export default function Checkout({ onBackToCart, onOrderSuccess }) {
 
     try {
       const payload = {
-        recipientName: formData.recipientName,
-        phone: formData.phone,
-        shippingAddress: formData.shippingAddress,
+        recipientName: formData.deliveryType === 'ONLINE_COLLECTION' ? 'Online Store' : formData.recipientName,
+        phone: formData.deliveryType === 'ONLINE_COLLECTION' ? '0000000000' : formData.phone,
+        shippingAddress: formData.deliveryType === 'ONLINE_COLLECTION' ? 'Online Store' : formData.shippingAddress,
         note: formData.note,
-        paymentMethod: formData.paymentMethod
+        paymentMethod: formData.paymentMethod,
+        deliveryType: formData.deliveryType
       };
 
       const createdOrder = await api.placeOrder(payload);
@@ -121,7 +125,7 @@ export default function Checkout({ onBackToCart, onOrderSuccess }) {
         <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-6">
           <div className="bg-white border border-gray-150 rounded-[32px] p-6.5 space-y-5 shadow-premium">
             <h3 className="text-base font-black text-gray-900 tracking-wide pb-2 border-b border-gray-100">
-              Thông Tin Giao Hàng
+              Hình Thức Nhận Thẻ & Giao Hàng
             </h3>
 
             {error && (
@@ -130,44 +134,82 @@ export default function Checkout({ onBackToCart, onOrderSuccess }) {
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className={labelClass}>Họ tên người nhận *</label>
-              <input
-                type="text"
-                name="recipientName"
-                value={formData.recipientName}
-                onChange={handleInputChange}
-                placeholder="e.g. Nguyễn Văn A"
-                className={inputClass}
-                required
-              />
+            {/* Delivery Type Options */}
+            <div className="space-y-1.5">
+              <label className={labelClass}>Hình thức nhận thẻ bài *</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, deliveryType: 'ONLINE_COLLECTION' }))}
+                  className={`border rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer transition-all duration-300 ${
+                    formData.deliveryType === 'ONLINE_COLLECTION'
+                      ? 'border-[#e53935] bg-red-50/50 text-[#e53935] shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:shadow-xs'
+                  }`}
+                >
+                  <span className="text-2xl">📦</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider block">Lưu giữ online</span>
+                  <span className="text-[9px] font-bold text-gray-400 leading-tight">Đưa vào bộ sưu tập để trao đổi</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, deliveryType: 'PHYSICAL_SHIPPING' }))}
+                  className={`border rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer transition-all duration-300 ${
+                    formData.deliveryType === 'PHYSICAL_SHIPPING'
+                      ? 'border-[#e53935] bg-red-50/50 text-[#e53935] shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:shadow-xs'
+                  }`}
+                >
+                  <span className="text-2xl">🚚</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider block">Giao hàng vật lý</span>
+                  <span className="text-[9px] font-bold text-gray-400 leading-tight">Đóng gói và ship về nhà</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label className={labelClass}>Số điện thoại liên hệ *</label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="e.g. 0909123456"
-                className={inputClass}
-                required
-              />
-            </div>
+            {formData.deliveryType === 'PHYSICAL_SHIPPING' && (
+              <>
+                <div className="space-y-1">
+                  <label className={labelClass}>Họ tên người nhận *</label>
+                  <input
+                    type="text"
+                    name="recipientName"
+                    value={formData.recipientName}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Nguyễn Văn A"
+                    className={inputClass}
+                    required
+                  />
+                </div>
 
-            <div className="space-y-1">
-              <label className={labelClass}>Địa chỉ nhận hàng *</label>
-              <input
-                type="text"
-                name="shippingAddress"
-                value={formData.shippingAddress}
-                onChange={handleInputChange}
-                placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/TP"
-                className={inputClass}
-                required
-              />
-            </div>
+                <div className="space-y-1">
+                  <label className={labelClass}>Số điện thoại liên hệ *</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="e.g. 0909123456"
+                    className={inputClass}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className={labelClass}>Địa chỉ nhận hàng *</label>
+                  <input
+                    type="text"
+                    name="shippingAddress"
+                    value={formData.shippingAddress}
+                    onChange={handleInputChange}
+                    placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/TP"
+                    className={inputClass}
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             <div className="space-y-1">
               <label className={labelClass}>Ghi chú giao hàng (Không bắt buộc)</label>

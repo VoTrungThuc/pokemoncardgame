@@ -383,9 +383,15 @@ export default function AnalyticsDashboard() {
                         {}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-full ${user.role === 'ADMIN' ? 'bg-gradient-to-tr from-purple-600 to-indigo-500' : 'bg-gradient-to-tr from-[#e53935] to-red-400'} text-white flex items-center justify-center font-black text-xs shadow-sm`}>
-                              {user.username ? user.username.substring(0, 2).toUpperCase() : 'US'}
-                            </div>
+                            {user.role === 'ADMIN' ? (
+                              <div className="w-9 h-9 rounded-full overflow-hidden border border-purple-200 shadow-sm bg-white">
+                                <img src="/images/admin_logo.png" alt="Admin Logo" className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className={`w-9 h-9 rounded-full bg-gradient-to-tr from-[#e53935] to-red-400 text-white flex items-center justify-center font-black text-xs shadow-sm`}>
+                                {user.username ? user.username.substring(0, 2).toUpperCase() : 'US'}
+                              </div>
+                            )}
                             <div className="flex flex-col">
                               <span className="text-sm font-black text-gray-900">@{user.username}</span>
                               <span className="text-[10px] text-gray-400 font-bold mt-0.5">{user.email}</span>

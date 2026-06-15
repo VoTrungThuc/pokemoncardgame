@@ -1,14 +1,15 @@
 package com.pokemon.marketplace.entity;
 
 import com.pokemon.marketplace.entity.enums.UserRole;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,24 +17,21 @@ import lombok.NoArgsConstructor;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     private String phone;
 
-    @Column(name = "shipping_address")
+    @Field("shipping_address")
     private String shippingAddress;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private UserRole role;
+
+    @Builder.Default
+    private Double balance = 0.0;
 }

@@ -1,17 +1,18 @@
 package com.pokemon.marketplace.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "auctions")
+@Document(collection = "auctions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,39 +20,37 @@ import java.util.List;
 public class Auction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "card_name", nullable = false)
+    @Field("card_name")
     private String cardName;
 
-    @Column(name = "image_url")
+    @Field("image_url")
     private String imageUrl;
 
     private String rarity;
 
-    @Column(name = "card_condition")
+    @Field("card_condition")
     private String condition;
 
-    @Column(name = "current_bid", nullable = false)
+    @Field("current_bid")
     private BigDecimal currentBid;
 
-    @Column(name = "highest_bidder")
+    @Field("highest_bidder")
     private String highestBidder;
 
-    @Column(name = "bids_count", nullable = false)
+    @Field("bids_count")
     private Integer bidsCount;
 
-    @Column(name = "end_time", nullable = false)
+    @Field("end_time")
     private LocalDateTime endTime;
 
-    @Column(nullable = false)
     private String status; 
 
-    @Column(name = "created_by_admin", nullable = false)
+    @Field("created_by_admin")
     private Boolean createdByAdmin;
 
-    @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Field("bid_history")
     @Builder.Default
     private List<AuctionBid> bidHistory = new ArrayList<>();
 }

@@ -53,7 +53,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-850 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50/80 text-gray-800 flex flex-col font-sans">
       <Header
         activeTab={activeTab}
         setActiveTab={handleTabChange}

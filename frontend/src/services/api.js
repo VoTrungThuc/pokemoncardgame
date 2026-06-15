@@ -106,6 +106,7 @@ export const api = {
   
   login: (credentials) => client.post('/api/auth/login', credentials).then(unwrap),
   register: (userData) => client.post('/api/auth/register', userData).then(unwrap),
+  verifyOtp: (email, otp) => client.post('/api/auth/verify-otp', { email, otp }).then(unwrap),
   logout: (refreshToken) => client.post('/api/auth/logout', { refreshToken }).then(unwrap),
 
   

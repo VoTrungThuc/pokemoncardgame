@@ -28,6 +28,10 @@ export function AuthProvider({ children }) {
     return await api.register({ username, email, password, phone, shippingAddress, role });
   };
 
+  const verifyOtp = async (email, otp) => {
+    return await api.verifyOtp(email, otp);
+  };
+
   const logout = async () => {
     const rt = localStorage.getItem('refreshToken');
     if (rt) {
@@ -56,7 +60,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ activeUser, login, register, logout }}>
+    <AuthContext.Provider value={{ activeUser, login, register, verifyOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );

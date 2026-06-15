@@ -1,5 +1,6 @@
 package com.pokemon.marketplace.service;
 
+import com.pokemon.marketplace.dto.GachaRedeemRequest;
 import com.pokemon.marketplace.dto.OrderCreateRequest;
 import com.pokemon.marketplace.dto.OrderDTO;
 import com.pokemon.marketplace.entity.*;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.pokemon.marketplace.dto.AuctionClaimRequest;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final NotificationRepository notificationRepository;
+    private final AuctionRepository auctionRepository;
     private final OrderMapper orderMapper;
 
     @Transactional
@@ -48,13 +51,38 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
+        String deliveryType = request.getDeliveryType();
+        if (deliveryType == null || deliveryType.trim().isEmpty()) {
+            deliveryType = "ONLINE_COLLECTION";
+        } else {
+            deliveryType = deliveryType.trim().toUpperCase();
+        }
+
+        if (!"ONLINE_COLLECTION".equals(deliveryType) && !"PHYSICAL_SHIPPING".equals(deliveryType)) {
+            throw new IllegalArgumentException("Hình thức nhận hàng không hợp lệ (deliveryType).");
+        }
+
+        if (request.getRecipientName() == null || request.getRecipientName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ tên người nhận là bắt buộc.");
+        }
+        if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+            throw new IllegalArgumentException("Số điện thoại liên hệ là bắt buộc.");
+        }
+        if (!request.getPhone().trim().matches("^\\d{9,11}$")) {
+            throw new IllegalArgumentException("Số điện thoại không hợp lệ (yêu cầu từ 9 đến 11 chữ số).");
+        }
+        if (request.getShippingAddress() == null || request.getShippingAddress().trim().isEmpty()) {
+            throw new IllegalArgumentException("Địa chỉ nhận hàng là bắt buộc.");
+        }
+
         Order order = Order.builder()
                 .user(user)
-                .recipientName(request.getRecipientName())
-                .phone(request.getPhone())
-                .shippingAddress(request.getShippingAddress())
+                .recipientName(request.getRecipientName().trim())
+                .phone(request.getPhone().trim())
+                .shippingAddress(request.getShippingAddress().trim())
                 .note(request.getNote())
                 .paymentMethod(request.getPaymentMethod())
+                .deliveryType(deliveryType)
                 .status(OrderStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -89,6 +117,15 @@ public class OrderService {
 
         order.setTotalAmount(totalAmount);
         order.setItems(orderItems);
+
+        if ("BALANCE".equalsIgnoreCase(request.getPaymentMethod())) {
+            if (user.getBalance() < totalAmount.doubleValue()) {
+                throw new IllegalArgumentException("Số dư tài khoản trong ứng dụng không đủ để thanh toán (Yêu cầu: $" + totalAmount + ", Hiện tại: $" + user.getBalance() + ").");
+            }
+            user.setBalance(user.getBalance() - totalAmount.doubleValue());
+            userRepository.save(user);
+            order.setStatus(OrderStatus.PROCESSING);
+        }
 
         Order savedOrder = orderRepository.save(order);
 
@@ -143,6 +180,12 @@ public class OrderService {
                 product.setStock(product.getStock() + item.getQuantity());
                 product.setIsAvailable(true);
                 productRepository.save(product);
+            }
+
+            if ("AUCTION".equalsIgnoreCase(order.getPaymentMethod()) || "BALANCE".equalsIgnoreCase(order.getPaymentMethod())) {
+                User user = order.getUser();
+                user.setBalance(user.getBalance() + order.getTotalAmount().doubleValue());
+                userRepository.save(user);
             }
         }
 
@@ -211,6 +254,11 @@ public class OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        if ("AUCTION".equalsIgnoreCase(order.getPaymentMethod()) || "BALANCE".equalsIgnoreCase(order.getPaymentMethod())) {
+            User user = order.getUser();
+            user.setBalance(user.getBalance() + order.getTotalAmount().doubleValue());
+            userRepository.save(user);
+        }
         Order saved = orderRepository.save(order);
 
         
@@ -232,5 +280,210 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
         return orderMapper.toDTO(order);
+    }
+
+    @Transactional
+    public OrderDTO redeemGachaCards(Long userId, GachaRedeemRequest request) {
+        log.info("User ID: {} redeeming Gacha cards", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new IllegalArgumentException("Quản trị viên không thể nhận thẻ bài.");
+        }
+
+        if (request.getProductIds().size() != request.getQuantities().size()) {
+            throw new IllegalArgumentException("Danh sách sản phẩm và số lượng không khớp.");
+        }
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        
+        String shippingAddress = request.getDeliveryMethod().equalsIgnoreCase("STORE_PICKUP")
+                ? "Nhận tại cửa hàng: " + request.getStoreName()
+                : request.getShippingAddress();
+
+        Order order = Order.builder()
+                .user(user)
+                .recipientName(request.getRecipientName())
+                .phone(request.getPhone())
+                .shippingAddress(shippingAddress)
+                .note(request.getNote() != null ? "[GACHA REDEEM] " + request.getNote() : "[GACHA REDEEM]")
+                .paymentMethod("GACHA")
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        for (int i = 0; i < request.getProductIds().size(); i++) {
+            Long prodId = request.getProductIds().get(i);
+            Integer quantity = request.getQuantities().get(i);
+            
+            Product product = productRepository.findById(prodId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thẻ bài với ID: " + prodId));
+
+            if (product.getStock() < quantity) {
+                throw new IllegalArgumentException("Thẻ " + product.getName() + " không đủ số lượng trong kho (" + product.getStock() + ")");
+            }
+            product.setStock(product.getStock() - quantity);
+            if (product.getStock() == 0) {
+                product.setIsAvailable(false);
+            }
+            productRepository.save(product);
+
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .product(product)
+                    .price(BigDecimal.ZERO)
+                    .quantity(quantity)
+                    .build();
+
+            orderItems.add(orderItem);
+        }
+
+        order.setItems(orderItems);
+        Order savedOrder = orderRepository.save(order);
+
+        Notification statusNotification = Notification.builder()
+                .user(user)
+                .title("Đơn nhận thẻ Gacha #" + savedOrder.getId() + " thành công")
+                .content("Yêu cầu " + (request.getDeliveryMethod().equalsIgnoreCase("STORE_PICKUP") ? "nhận tại cửa hàng" : "giao tận nhà") 
+                        + " cho " + orderItems.size() + " loại thẻ bài đang được xử lý.")
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        notificationRepository.save(statusNotification);
+
+        return orderMapper.toDTO(savedOrder);
+    }
+
+    @Transactional
+    public OrderDTO claimAuctionCard(Long userId, Long auctionId, AuctionClaimRequest request) {
+        log.info("User ID: {} claiming auction ID: {}", userId, auctionId);
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiên đấu giá với ID: " + auctionId));
+
+        if (!"ended".equalsIgnoreCase(auction.getStatus())) {
+            throw new IllegalArgumentException("Phiên đấu giá chưa kết thúc hoặc đã được nhận.");
+        }
+
+        // Check if current user is the winner
+        String cleanWinner = auction.getHighestBidder();
+        if (cleanWinner != null && cleanWinner.startsWith("@")) {
+            cleanWinner = cleanWinner.substring(1);
+        }
+        
+        if (cleanWinner == null || !cleanWinner.equalsIgnoreCase(user.getUsername())) {
+            throw new IllegalArgumentException("Bạn không phải là người chiến thắng phiên đấu giá này.");
+        }
+
+        // Resolve payment method (default to AUCTION if empty/null)
+        String paymentMethod = request.getPaymentMethod();
+        if (paymentMethod == null || paymentMethod.trim().isEmpty()) {
+            paymentMethod = "AUCTION";
+        }
+
+        double bidAmount = auction.getCurrentBid().doubleValue();
+        if ("AUCTION".equalsIgnoreCase(paymentMethod)) {
+            // Check user balance
+            if (user.getBalance() < bidAmount) {
+                throw new IllegalArgumentException("Số dư ví của bạn không đủ để thanh toán (" + String.format("%.2f", bidAmount) + ")");
+            }
+
+            // Deduct user balance
+            user.setBalance(user.getBalance() - bidAmount);
+            userRepository.save(user);
+        }
+
+        // Find the corresponding product by card name
+        Product product = productRepository.findByName(auction.getCardName())
+                .orElse(null);
+
+        if (product != null) {
+            if (product.getStock() > 0) {
+                product.setStock(product.getStock() - 1);
+                if (product.getStock() == 0) {
+                    product.setIsAvailable(false);
+                }
+                productRepository.save(product);
+            }
+        }
+
+        // Create Order
+        String shippingAddress = request.getDeliveryMethod().equalsIgnoreCase("STORE_PICKUP")
+                ? "Nhận tại cửa hàng: " + request.getStoreName()
+                : request.getShippingAddress();
+
+        Order order = Order.builder()
+                .user(user)
+                .recipientName(request.getRecipientName())
+                .phone(request.getPhone())
+                .shippingAddress(shippingAddress)
+                .note(request.getNote() != null && !request.getNote().isEmpty() ? "[ĐẤU GIÁ THẮNG] " + request.getNote() : "[ĐẤU GIÁ THẮNG]")
+                .paymentMethod(paymentMethod)
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .totalAmount(auction.getCurrentBid())
+                .build();
+
+        // Create OrderItem
+        List<OrderItem> orderItems = new ArrayList<>();
+        
+        // If product doesn't exist, we create/reference a placeholder product to avoid NullPointerException in OrderItems/Vite client
+        Product resolvedProduct = product;
+        if (resolvedProduct == null) {
+            resolvedProduct = productRepository.findAll().stream().findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("Hệ thống chưa có sản phẩm nào để tạo đơn hàng."));
+        }
+
+        OrderItem orderItem = OrderItem.builder()
+                .order(order)
+                .product(resolvedProduct)
+                .price(auction.getCurrentBid())
+                .quantity(1)
+                .build();
+        orderItems.add(orderItem);
+        order.setItems(orderItems);
+
+        Order savedOrder = orderRepository.save(order);
+
+        // Update auction status
+        auction.setStatus("claimed");
+        auctionRepository.save(auction);
+
+        // Notification for user
+        Notification notification = Notification.builder()
+                .user(user)
+                .title("Xác nhận thông tin giao nhận đấu giá #" + savedOrder.getId() + " thành công")
+                .content("Bạn đã xác nhận thông tin giao nhận cho thẻ " + auction.getCardName() 
+                        + ". Số tiền $" + String.format("%.2f", bidAmount) + " đã được thanh toán.")
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        notificationRepository.save(notification);
+
+        // Notification for Admin
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
+        String adminTitle = "🏆 Có đơn đấu giá mới #" + savedOrder.getId();
+        String adminContent = "Người dùng @" + user.getUsername() + " đã thanh toán $" + String.format("%.2f", bidAmount)
+                + " cho thẻ \"" + auction.getCardName() + "\" đấu giá thắng.\n"
+                + "Hình thức nhận hàng: " + (request.getDeliveryMethod().equalsIgnoreCase("STORE_PICKUP") ? "Nhận tại cửa hàng (" + request.getStoreName() + ")" : "Giao về nhà (" + request.getShippingAddress() + ")") + ".\n"
+                + "Người nhận: " + request.getRecipientName() + " - SĐT: " + request.getPhone();
+
+        for (User admin : admins) {
+            Notification adminNotification = Notification.builder()
+                    .user(admin)
+                    .title(adminTitle)
+                    .content(adminContent)
+                    .isRead(false)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(adminNotification);
+        }
+
+        return orderMapper.toDTO(savedOrder);
     }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/models/product.dart';
+import 'package:mobile/features/product/models/product.dart';
 
 void main() {
   group('Pokémon Trade Score Validation Logic Tests', () {

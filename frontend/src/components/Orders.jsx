@@ -62,6 +62,10 @@ export default function Orders({ activeUser }) {
         return 'Chuyển khoản ngân hàng';
       case 'E_WALLET':
         return 'Ví điện tử';
+      case 'GACHA':
+        return '🎟️ Đổi từ thẻ Gacha (Miễn phí)';
+      case 'AUCTION':
+        return '🔨 Thanh toán bằng Số Dư Đấu Giá';
       default:
         return method;
     }
@@ -141,7 +145,19 @@ export default function Orders({ activeUser }) {
               {}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-3.5 border-b border-gray-100">
                 <div className="space-y-1">
-                  <h3 className="text-sm font-black text-gray-950">Đơn hàng #{order.id}</h3>
+                  <h3 className="text-sm font-black text-gray-950 flex items-center gap-2 flex-wrap">
+                    <span>Đơn hàng #{order.id}</span>
+                    {order.paymentMethod === 'GACHA' && (
+                      <span className="bg-red-50 text-[#e53935] border border-red-200 text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">
+                        🎟️ Đổi Thẻ Gacha
+                      </span>
+                    )}
+                    {order.paymentMethod === 'AUCTION' && (
+                      <span className="bg-purple-50 text-purple-700 border border-purple-200 text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">
+                        🔨 Đơn Đấu Giá
+                      </span>
+                    )}
+                  </h3>
                   <span className="text-[10px] text-gray-400 font-bold block">{formatTime(order.createdAt)}</span>
                 </div>
 
@@ -198,11 +214,13 @@ export default function Orders({ activeUser }) {
                               <p className="font-black text-gray-900 text-xs truncate" title={item.product?.name}>
                                 {item.product?.name || 'Sản phẩm Pokemon'}
                               </p>
-                              <span className="text-[9px] text-gray-400 block font-bold">SL: {item.quantity} × ${item.price?.toFixed(2)}</span>
+                              <span className="text-[9px] text-gray-400 block font-bold">
+                                SL: {item.quantity} × {order.paymentMethod === 'GACHA' ? '$0.00 (Đổi Gacha)' : `$${item.price?.toFixed(2)}`}
+                              </span>
                             </div>
                           </div>
                           <span className="font-black text-[#e53935] text-xs whitespace-nowrap">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            {order.paymentMethod === 'GACHA' ? 'Miễn phí' : `$${(item.price * item.quantity).toFixed(2)}`}
                           </span>
                         </div>
                       );
@@ -227,7 +245,9 @@ export default function Orders({ activeUser }) {
 
                   <div className="flex justify-between items-baseline pt-1">
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Tổng tiền:</span>
-                    <span className="text-xl font-black text-[#e53935]">${order.totalAmount?.toFixed(2)}</span>
+                    <span className="text-xl font-black text-[#e53935]">
+                      {order.paymentMethod === 'GACHA' ? '$0.00 (Miễn phí)' : `$${order.totalAmount?.toFixed(2)}`}
+                    </span>
                   </div>
                 </div>
               </div>
