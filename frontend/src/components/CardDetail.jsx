@@ -3,6 +3,8 @@ import { api } from '../services/api';
 import { useCart } from '../context/CartContext';
 import CustomModal from './CustomModal';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 export default function CardDetail({ cardId, onBack, activeUser, onEditCard, onDeleteCard, onRefresh }) {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -10,6 +12,17 @@ export default function CardDetail({ cardId, onBack, activeUser, onEditCard, onD
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [addMessage, setAddMessage] = useState(null);
+
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentError, setCommentError] = useState(null);
+
+  const [replyingToCommentId, setReplyingToCommentId] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+  const [replyError, setReplyError] = useState(null);
 
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
@@ -37,6 +50,18 @@ export default function CardDetail({ cardId, onBack, activeUser, onEditCard, onD
 
   const { addToCart } = useCart();
 
+  const fetchComments = async () => {
+    try {
+      setCommentsLoading(true);
+      const list = await api.getComments(cardId);
+      setComments(list || []);
+    } catch (err) {
+      console.error("Lỗi khi tải nhận xét:", err);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -52,7 +77,45 @@ export default function CardDetail({ cardId, onBack, activeUser, onEditCard, onD
       }
     };
     fetchDetails();
+    fetchComments();
   }, [cardId]);
+
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    if (!newCommentText.trim()) return;
+
+    setSubmittingComment(true);
+    setCommentError(null);
+    try {
+      await api.addComment(cardId, { content: newCommentText.trim() });
+      setNewCommentText('');
+      fetchComments();
+    } catch (err) {
+      console.error(err);
+      setCommentError(err.response?.data?.message || 'Không thể gửi nhận xét. Vui lòng thử lại.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleSendReply = async (e, parentId) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+
+    setSubmittingReply(true);
+    setReplyError(null);
+    try {
+      await api.addComment(cardId, { content: replyText.trim(), parentId });
+      setReplyText('');
+      setReplyingToCommentId(null);
+      fetchComments();
+    } catch (err) {
+      console.error(err);
+      setReplyError(err.response?.data?.message || 'Không thể gửi phản hồi. Vui lòng thử lại.');
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!card || card.stock <= 0) return;
@@ -137,6 +200,8 @@ export default function CardDetail({ cardId, onBack, activeUser, onEditCard, onD
 
   const rarityStyle = getRarityStyle(card.ram);
   const currentPrice = (card.promoPrice !== null && card.promoPrice < card.price) ? card.promoPrice : card.price;
+
+  const parents = comments.filter(c => c.parentId === null || c.parentId === undefined);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -506,6 +571,236 @@ export default function CardDetail({ cardId, onBack, activeUser, onEditCard, onD
             </div>
           )}
         </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="bg-white border border-gray-200 rounded-[32px] p-6 md:p-8 shadow-premium space-y-6">
+        <div className="flex items-center gap-2 pb-4 border-b border-gray-150">
+          <span className="text-xl">💬</span>
+          <h3 className="text-lg font-black text-gray-900 tracking-tight">Nhận xét từ Huấn luyện viên</h3>
+          {!commentsLoading && (
+            <span className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-gray-200">
+              {comments.length}
+            </span>
+          )}
+        </div>
+
+        {/* Add comment form */}
+        {activeUser ? (
+          <form onSubmit={handleSubmitComment} className="space-y-3">
+            {commentError && (
+              <div className="p-3.5 bg-red-50 border border-red-200 text-[#e53935] text-xs font-bold rounded-xl">
+                ⚠️ {commentError}
+              </div>
+            )}
+            <div className="flex gap-3 items-start">
+              {/* User Initials Badge */}
+              <div className="w-10 h-10 rounded-full bg-red-50 border border-red-200 flex items-center justify-center font-black text-[#e53935] text-sm shrink-0">
+                {activeUser.username ? activeUser.username.substring(0, 2).toUpperCase() : 'US'}
+              </div>
+              <div className="flex-1 space-y-2">
+                <textarea
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder="Chia sẻ cảm nghĩ, nhận xét của bạn về thẻ bài này..."
+                  rows={3}
+                  className="w-full p-4 border-2 border-gray-200 rounded-2xl focus:border-[#e53935] focus:outline-none text-sm font-semibold transition-colors duration-200"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={submittingComment || !newCommentText.trim()}
+                    className="px-6 py-2.5 bg-[#e53935] hover:bg-[#d32f2f] disabled:opacity-50 text-white text-xs font-black tracking-wider uppercase rounded-xl transition-all shadow-md cursor-pointer"
+                  >
+                    {submittingComment ? 'Đang gửi...' : 'Gửi nhận xét 🚀'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        ) : (
+          <div className="p-5 bg-red-50/50 border border-red-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-gray-800">🔑 Đăng nhập để viết nhận xét</p>
+              <p className="text-xs text-gray-500 font-semibold">Chỉ các thành viên đã đăng nhập mới có thể gửi nhận xét sản phẩm.</p>
+            </div>
+            <button
+              onClick={() => window.dispatchEvent(new Event('auth-logout'))}
+              className="px-5 py-2.5 bg-[#e53935] hover:bg-[#d32f2f] text-white text-xs font-black rounded-xl transition-colors cursor-pointer"
+            >
+              ĐĂNG NHẬP NGAY
+            </button>
+          </div>
+        )}
+
+        {/* Comments List */}
+        {commentsLoading ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="text-2xl animate-spin text-[#e53935]">◓</div>
+            <p className="text-gray-400 text-xs mt-2 font-bold uppercase tracking-wider">Đang tải nhận xét...</p>
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 font-semibold text-sm space-y-2">
+            <div className="text-4xl opacity-40">📭</div>
+            <p>Chưa có nhận xét nào cho sản phẩm này.</p>
+            <p className="text-xs text-gray-450 font-normal">Hãy là người đầu tiên chia sẻ nhận xét của bạn!</p>
+          </div>
+        ) : (
+          <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
+            {parents.map((parent) => {
+              const replies = comments.filter(c => c.parentId === parent.id);
+              const parentHasAvatar = parent.avatarUrl && parent.avatarUrl.trim().length > 0;
+              const parentFormattedDate = parent.createdAt
+                ? new Date(parent.createdAt).toLocaleDateString('vi-VN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Gần đây';
+              
+              const isReplyingThis = replyingToCommentId === parent.id;
+              const isAdmin = activeUser?.role === 'ADMIN';
+
+              return (
+                <div key={parent.id} className="space-y-3">
+                  {/* Parent Comment */}
+                  <div className="p-4 bg-gray-50/50 border border-gray-150 rounded-2xl flex gap-3.5 hover:border-red-100 hover:shadow-premium-hover transition-all duration-300">
+                    {parentHasAvatar ? (
+                      <img
+                        src={parent.avatarUrl.startsWith('http') ? parent.avatarUrl : `${API_BASE_URL}${parent.avatarUrl}`}
+                        alt={parent.username}
+                        className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      style={{ display: parentHasAvatar ? 'none' : 'flex' }}
+                      className="w-10 h-10 rounded-full bg-[#FFEAEA] flex items-center justify-center font-black text-[#e53935] text-sm shrink-0"
+                    >
+                      {parent.username ? parent.username.substring(0, 2).toUpperCase() : 'US'}
+                    </div>
+
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-gray-900">@{parent.username}</span>
+                        <span className="text-[10px] text-gray-400 font-extrabold">{parentFormattedDate}</span>
+                      </div>
+                      <p className="text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-line">
+                        {parent.content}
+                      </p>
+                      
+                      {activeUser && isAdmin && (
+                        <div className="pt-1">
+                          <button
+                            onClick={() => {
+                              if (isReplyingThis) {
+                                setReplyingToCommentId(null);
+                                setReplyText('');
+                              } else {
+                                setReplyingToCommentId(parent.id);
+                                setReplyText(`@${parent.username} `);
+                              }
+                            }}
+                            className="text-xs font-black text-[#e53935] hover:underline cursor-pointer uppercase tracking-wider flex items-center gap-1"
+                          >
+                            💬 {isReplyingThis ? 'Hủy phản hồi' : 'Phản hồi tương tác'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Inline Reply Form */}
+                  {isReplyingThis && (
+                    <form onSubmit={(e) => handleSendReply(e, parent.id)} className="ml-10 p-4 bg-red-50/20 border border-red-100 rounded-2xl space-y-2">
+                      {replyError && (
+                        <div className="p-2 bg-red-50 text-[#e53935] text-xs font-bold rounded-lg">
+                          ⚠️ {replyError}
+                        </div>
+                      )}
+                      <div className="flex gap-2 items-start">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder={`Phản hồi cho @${parent.username}...`}
+                          rows={2}
+                          className="flex-1 p-3 border border-gray-200 bg-white rounded-xl focus:border-[#e53935] focus:outline-none text-xs font-semibold"
+                        />
+                        <button
+                          type="submit"
+                          disabled={submittingReply || !replyText.trim()}
+                          className="px-4 py-2 bg-[#e53935] hover:bg-[#d32f2f] disabled:opacity-50 text-white text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer shrink-0"
+                        >
+                          Gửi
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Nested Replies */}
+                  {replies.length > 0 && (
+                    <div className="ml-10 pl-4 border-l-2 border-gray-150 space-y-3">
+                      {replies.map((reply) => {
+                        const replyHasAvatar = reply.avatarUrl && reply.avatarUrl.trim().length > 0;
+                        const replyFormattedDate = reply.createdAt
+                          ? new Date(reply.createdAt).toLocaleDateString('vi-VN', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : 'Gần đây';
+
+                        return (
+                          <div
+                            key={reply.id}
+                            className="p-3 bg-gray-50/30 border border-gray-150 rounded-xl flex gap-3 hover:border-red-100/70 hover:shadow-premium-hover transition-all duration-300"
+                          >
+                            {replyHasAvatar ? (
+                              <img
+                                src={reply.avatarUrl.startsWith('http') ? reply.avatarUrl : `${API_BASE_URL}${reply.avatarUrl}`}
+                                alt={reply.username}
+                                className="w-8 h-8 rounded-full object-cover shadow-sm shrink-0"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              style={{ display: replyHasAvatar ? 'none' : 'flex' }}
+                              className="w-8 h-8 rounded-full bg-[#FFEAEA] flex items-center justify-center font-black text-[#e53935] text-xs shrink-0"
+                            >
+                              {reply.username ? reply.username.substring(0, 2).toUpperCase() : 'US'}
+                            </div>
+
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-gray-900">@{reply.username}</span>
+                                <span className="text-[9px] text-gray-400 font-extrabold">{replyFormattedDate}</span>
+                              </div>
+                              <p className="text-xs text-gray-650 font-semibold leading-relaxed whitespace-pre-line">
+                                {reply.content}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <CustomModal

@@ -9,6 +9,7 @@ import 'package:mobile/features/trade/models/trade.dart';
 import 'package:mobile/features/auction/models/auction.dart';
 import 'package:mobile/features/chat/models/chat_message.dart';
 import 'package:mobile/features/auth/models/user.dart';
+import 'package:mobile/features/product/models/comment.dart';
 
 class ApiService {
   static const String _baseUrlAndroid = 'http://10.0.2.2:8080';
@@ -305,6 +306,34 @@ class ApiService {
     if (response.statusCode != 200 || data['success'] != true) {
       throw Exception(data['message'] ?? 'Failed to delete card');
     }
+  }
+
+  // Product Comments
+  static Future<List<Comment>> getComments(int productId) async {
+    final response = await get('/api/products/$productId/comments');
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        final list = _extractList(data['data']);
+        return list.map((i) => Comment.fromJson(i)).toList();
+      }
+    }
+    return [];
+  }
+
+  static Future<Comment> addComment(int productId, String content, {int? parentId}) async {
+    final response = await post('/api/products/$productId/comments', {
+      'content': content,
+      if (parentId != null) 'parentId': parentId,
+    });
+    if (response.body.isEmpty) {
+      throw Exception('Server phản hồi lỗi với mã trạng thái: ${response.statusCode}');
+    }
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return Comment.fromJson(data['data']);
+    }
+    throw Exception(data['message'] ?? 'Không thể gửi nhận xét');
   }
 
   // Cart
@@ -646,5 +675,14 @@ class ApiService {
       final data = jsonDecode(response.body);
       throw Exception(data['message'] ?? 'Không thể cập nhật trạng thái đơn hàng');
     }
+  }
+
+  static Future<User> updateUserProfile(Map<String, dynamic> updateData) async {
+    final response = await put('/api/users/me', updateData);
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return User.fromJson(data['data']);
+    }
+    throw Exception(data['message'] ?? 'Cập nhật hồ sơ thất bại: ${data['message']}');
   }
 }

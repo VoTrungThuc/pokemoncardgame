@@ -1,6 +1,5 @@
 package com.pokemon.marketplace.entity;
 
-import com.pokemon.marketplace.entity.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,33 +7,34 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import java.time.LocalDateTime;
 
-@Document(collection = "users")
+@Document(collection = "comments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class Comment {
 
     @Id
     private Long id;
 
+    @Field("product_id")
+    private Long productId;
+
+    @Field("user_id")
+    private Long userId;
+
     private String username;
-
-    private String email;
-
-    private String password;
-
-    private String phone;
-
-    @Field("shipping_address")
-    private String shippingAddress;
-
-    private UserRole role;
 
     @Field("avatar_url")
     private String avatarUrl;
 
-    @Builder.Default
-    private Double balance = 0.0;
+    private String content;
+
+    @Field("created_at")
+    private LocalDateTime createdAt;
+
+    @Field("parent_id")
+    private Long parentId;
 }

@@ -6,6 +6,7 @@ class User {
   final String? phone;
   final String? shippingAddress;
   final double balance;
+  final String? avatarUrl;
 
   User({
     required this.id,
@@ -15,6 +16,7 @@ class User {
     this.phone,
     this.shippingAddress,
     required this.balance,
+    this.avatarUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class User {
       phone: json['phone'],
       shippingAddress: json['shippingAddress'] ?? json['shipping_address'],
       balance: json['balance'] is num ? (json['balance'] as num).toDouble() : 0.0,
+      avatarUrl: json['avatarUrl'] ?? json['avatar_url'],
     );
   }
 
@@ -38,6 +41,7 @@ class User {
       'phone': phone,
       'shippingAddress': shippingAddress,
       'balance': balance,
+      'avatarUrl': avatarUrl,
     };
   }
 }

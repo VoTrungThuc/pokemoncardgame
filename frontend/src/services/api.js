@@ -166,4 +166,10 @@ export const api = {
   getUsers: () => client.get('/api/users').then(unwrap),
   createAdmin: (adminData) => client.post('/api/users/admin', adminData).then(unwrap),
   updateUserRole: (id, role) => client.put(`/api/users/${id}/role`, { role }).then(unwrap),
+  getProfile: () => client.get('/api/users/me').then(unwrap),
+  updateProfile: (profileData) => client.put('/api/users/me', profileData).then(unwrap),
+
+  // Product Comments
+  getComments: (productId) => client.get(`/api/products/${productId}/comments`).then(unwrap),
+  addComment: (productId, commentData) => client.post(`/api/products/${productId}/comments`, commentData).then(unwrap),
 };

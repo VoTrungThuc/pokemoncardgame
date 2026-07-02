@@ -18,6 +18,8 @@ public class UserMapper {
                 .phone(user.getPhone())
                 .shippingAddress(user.getShippingAddress())
                 .role(user.getRole())
+                .balance(user.getBalance())
+                .avatarUrl(user.getAvatarUrl())
                 .build();
     }
 }

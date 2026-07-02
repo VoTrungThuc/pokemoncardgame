@@ -1,3 +1,4 @@
+import 'package:mobile/shared/widgets/notification_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -69,114 +70,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           }
         }
         if (mounted) {
-          showDialog(
+          showNotificationPopup(
             context: context,
-            barrierDismissible: false,
-            builder: (ctx) => Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 90,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF10B981).withOpacity(0.1),
-                                blurRadius: 20,
-                                spreadRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD1FAE5),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFF6EE7B7), width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.check_circle_rounded,
-                            color: Color(0xFF10B981),
-                            size: 40,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Đặt hàng thành công! 🎉',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1E293B),
-                        letterSpacing: 0.2,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Text(
-                        _selectedPaymentMethod == 'BALANCE'
-                            ? 'Đơn hàng của bạn đã được thanh toán và đặt thành công bằng số dư tài khoản trong ứng dụng.'
-                            : 'Đơn hàng của bạn đã được đặt thành công theo hình thức nhận hàng thanh toán (COD).',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF475569),
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE53935),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'ĐỒNG Ý (OK)',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            title: 'Đặt hàng thành công! 🎉',
+            message: _selectedPaymentMethod == 'BALANCE'
+                ? 'Đơn hàng của bạn đã được thanh toán và đặt thành công bằng số dư tài khoản trong ứng dụng.'
+                : 'Đơn hàng của bạn đã được đặt thành công theo hình thức nhận hàng thanh toán (COD).',
+            type: NotificationType.success,
+            confirmLabel: 'ĐỒNG Ý (OK)',
+            onConfirm: () {
+              Navigator.pop(context); // Exit checkout screen
+            },
           );
         }
       } else if (_selectedPaymentMethod == 'VNPAY') {
@@ -189,11 +93,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đặt hàng thất bại: ${e.toString().replaceFirst('Exception: ', '')}'),
-            backgroundColor: Colors.red,
-          ),
+        showStyledSnackBar(
+          context: context,
+          message: 'Đặt hàng thất bại: ${e.toString().replaceFirst('Exception: ', '')}',
+          type: NotificationType.error,
         );
       }
     } finally {
@@ -287,8 +190,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         try {
                           await launchUrl(uri, mode: LaunchMode.externalApplication);
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Không thể mở trang thanh toán')),
+                          showStyledSnackBar(
+                            context: context,
+                            message: 'Không thể mở trang thanh toán',
+                            type: NotificationType.error,
                           );
                         }
                       },
@@ -308,11 +213,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     OutlinedButton.icon(
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: paymentUrl));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Đã sao chép liên kết thanh toán VNPay!'),
-                            backgroundColor: Color(0xFF16A34A),
-                          ),
+                        showStyledSnackBar(
+                          context: context,
+                          message: 'Đã sao chép liên kết thanh toán VNPay!',
+                          type: NotificationType.success,
                         );
                       },
                       icon: const Icon(Icons.copy_rounded, color: Color(0xFFE53935), size: 18),
@@ -334,112 +238,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Navigator.pop(ctx); // Close VNPay dialog
                         
                         // Show success payment popup
-                        showDialog(
+                        showNotificationPopup(
                           context: context,
-                          barrierDismissible: false,
-                          builder: (successCtx) => Dialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                            backgroundColor: Colors.white,
-                            surfaceTintColor: Colors.transparent,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        width: 90,
-                                        height: 90,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFECFDF5),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFF10B981).withOpacity(0.1),
-                                              blurRadius: 20,
-                                              spreadRadius: 4,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 70,
-                                        height: 70,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFD1FAE5),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: const Color(0xFF6EE7B7), width: 2),
-                                        ),
-                                        child: const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: Color(0xFF10B981),
-                                          size: 40,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  const Text(
-                                    'Thành công! 🎉',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF1E293B),
-                                      letterSpacing: 0.2,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                    ),
-                                    child: const Text(
-                                      'Giao dịch thanh toán qua VNPay đã được ghi nhận. Đơn hàng của bạn đang được hệ thống xử lý!',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF475569),
-                                        height: 1.5,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 28),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(successCtx); // Close success dialog
-                                      Navigator.pop(context); // Exit checkout screen
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFE53935),
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      minimumSize: const Size(double.infinity, 50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'ĐỒNG Ý (OK)',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 12,
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          title: 'Thành công! 🎉',
+                          message: 'Giao dịch thanh toán qua VNPay đã được ghi nhận. Đơn hàng của bạn đang được hệ thống xử lý!',
+                          type: NotificationType.success,
+                          confirmLabel: 'Đồng ý (OK)',
+                          onConfirm: () {
+                            Navigator.pop(context); // Exit checkout screen
+                          },
                         );
                       },
                       child: const Text(

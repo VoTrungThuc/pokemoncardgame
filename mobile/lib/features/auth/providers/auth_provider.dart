@@ -156,4 +156,20 @@ class AuthProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+  // Update profile data (avatar, phone, address)
+  Future<void> updateProfile(Map<String, dynamic> updateData) async {
+    if (_user == null) return;
+    try {
+      final updatedUser = await ApiService.updateUserProfile(updateData);
+      _user = updatedUser;
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(updatedUser.toJson()));
+      notifyListeners();
+    } catch (e) {
+      print('Error updating profile: $e');
+      rethrow;
+    }
+  }
 }

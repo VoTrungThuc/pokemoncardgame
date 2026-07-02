@@ -545,7 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             Text(
-                              'Trainer @$trainerName 👋',
+                              'Trainer @$trainerName',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,

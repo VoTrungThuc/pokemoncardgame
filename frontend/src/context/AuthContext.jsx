@@ -47,6 +47,38 @@ export function AuthProvider({ children }) {
     setActiveUser(null);
   };
 
+  const refreshProfile = async () => {
+    try {
+      const profileData = await api.getProfile();
+      const updatedUser = {
+        ...activeUser,
+        phone: profileData.phone,
+        shippingAddress: profileData.shippingAddress,
+        avatarUrl: profileData.avatarUrl,
+        balance: profileData.balance,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setActiveUser(updatedUser);
+      return updatedUser;
+    } catch (err) {
+      console.error('Failed to refresh profile', err);
+    }
+  };
+
+  const updateProfile = async (profileData) => {
+    const res = await api.updateProfile(profileData);
+    const updatedUser = {
+      ...activeUser,
+      phone: res.phone,
+      shippingAddress: res.shippingAddress,
+      avatarUrl: res.avatarUrl,
+      balance: res.balance,
+    };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setActiveUser(updatedUser);
+    return updatedUser;
+  };
+
   useEffect(() => {
     const handleLogoutEvent = () => {
       localStorage.removeItem('token');
@@ -60,7 +92,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ activeUser, login, register, verifyOtp, logout }}>
+    <AuthContext.Provider value={{ activeUser, login, register, verifyOtp, logout, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

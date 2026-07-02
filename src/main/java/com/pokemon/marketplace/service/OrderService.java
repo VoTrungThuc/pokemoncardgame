@@ -169,8 +169,20 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
         OrderStatus oldStatus = order.getStatus();
+        if (oldStatus == status) {
+            return orderMapper.toDTO(order);
+        }
+
         if (oldStatus == OrderStatus.COMPLETED || oldStatus == OrderStatus.CANCELLED) {
             throw new IllegalArgumentException("Không thể cập nhật trạng thái đơn hàng đã HOÀN THÀNH hoặc đã HỦY.");
+        }
+
+        // Prevent moving backward to previous workflow steps
+        if (oldStatus == OrderStatus.SHIPPED && (status == OrderStatus.PROCESSING || status == OrderStatus.PENDING)) {
+            throw new IllegalArgumentException("Đơn hàng đã GIAO HÀNG (SHIPPED) không thể quay lại trạng thái CHỜ DUYỆT (PENDING) hoặc ĐANG XỬ LÝ (PROCESSING).");
+        }
+        if (oldStatus == OrderStatus.PROCESSING && status == OrderStatus.PENDING) {
+            throw new IllegalArgumentException("Đơn hàng đang XỬ LÝ (PROCESSING) không thể quay lại trạng thái CHỜ DUYỆT (PENDING).");
         }
 
         if (status == OrderStatus.CANCELLED && oldStatus != OrderStatus.CANCELLED) {
@@ -186,6 +198,13 @@ public class OrderService {
                 User user = order.getUser();
                 user.setBalance(user.getBalance() + order.getTotalAmount().doubleValue());
                 userRepository.save(user);
+            }
+
+            if (order.getAuctionId() != null) {
+                auctionRepository.findById(order.getAuctionId()).ifPresent(auction -> {
+                    auction.setStatus("cancelled");
+                    auctionRepository.save(auction);
+                });
             }
         }
 
@@ -258,6 +277,13 @@ public class OrderService {
             User user = order.getUser();
             user.setBalance(user.getBalance() + order.getTotalAmount().doubleValue());
             userRepository.save(user);
+        }
+
+        if (order.getAuctionId() != null) {
+            auctionRepository.findById(order.getAuctionId()).ifPresent(auction -> {
+                auction.setStatus("cancelled");
+                auctionRepository.save(auction);
+            });
         }
         Order saved = orderRepository.save(order);
 
@@ -427,6 +453,7 @@ public class OrderService {
                 .status(OrderStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .totalAmount(auction.getCurrentBid())
+                .auctionId(auctionId)
                 .build();
 
         // Create OrderItem

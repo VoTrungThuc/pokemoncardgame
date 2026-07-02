@@ -51,6 +51,9 @@ public class Order {
     @Field("created_at")
     private LocalDateTime createdAt;
 
+    @Field("auction_id")
+    private Long auctionId;
+
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 }

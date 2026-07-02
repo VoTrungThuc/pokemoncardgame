@@ -18,4 +18,5 @@ public class UserDTO {
     private String shippingAddress;
     private UserRole role;
     private Double balance;
+    private String avatarUrl;
 }

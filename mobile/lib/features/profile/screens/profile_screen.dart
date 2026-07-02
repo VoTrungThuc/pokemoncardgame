@@ -1,3 +1,4 @@
+import 'package:mobile/shared/widgets/notification_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/features/order/models/order.dart';
+import 'package:mobile/features/auth/models/user.dart';
+import 'dart:math';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,6 +36,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) => _DepositSheetContent(auth: auth),
+    );
+  }
+
+  void _showEditProfileBottomSheet(BuildContext context, AuthProvider auth) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => _EditProfileSheetContent(auth: auth),
     );
   }
 
@@ -66,27 +81,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: const Color(0xFFFFF5F5),
-                          child: isAdmin
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: Image.asset(
-                                    'assets/admin_logo.png',
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Text(
-                                  username.substring(0, 2).toUpperCase(),
-                                  style: const TextStyle(
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: const Color(0xFFFFF5F5),
+                              backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                                  ? NetworkImage(user.avatarUrl!)
+                                  : null,
+                              child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
+                                  ? (isAdmin
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(30),
+                                          child: Image.asset(
+                                            'assets/admin_logo.png',
+                                            width: 60,
+                                            height: 60,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        )
+                                      : Text(
+                                          username.substring(0, min(2, username.length)).toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Color(0xFFE53935),
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 20,
+                                          ),
+                                        ))
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () => _showEditProfileBottomSheet(context, auth),
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: const BoxDecoration(
                                     color: Color(0xFFE53935),
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 20,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 4,
+                                      )
+                                    ]
                                   ),
+                                  child: const Icon(Icons.edit_rounded, color: Colors.white, size: 12),
                                 ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -149,10 +194,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             label: const Text(
                               'NẠP TIỀN',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE53935),
@@ -175,6 +219,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             // Profile Nav Options List
+            _buildProfileOption(
+              context,
+              icon: Icons.manage_accounts_rounded,
+              color: Colors.blueGrey,
+              title: 'Chỉnh Sửa Thông Tin Cá Nhân',
+              onTap: () => _showEditProfileBottomSheet(context, auth),
+            ),
             if (isAdmin)
               _buildProfileOption(
                 context,
@@ -233,111 +284,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Logout Button
             ElevatedButton.icon(
               onPressed: () {
-                showDialog(
+                showNotificationPopup(
                   context: context,
-                  builder: (ctx) => Dialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    backgroundColor: Colors.white,
-                    surfaceTintColor: Colors.transparent,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFFF5F5),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Container(
-                                width: 62,
-                                height: 62,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEE2E2),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
-                                ),
-                                child: const Icon(
-                                  Icons.logout_rounded,
-                                  color: Color(0xFFEF4444),
-                                  size: 30,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          const Text(
-                            'Đăng xuất tài khoản',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1E293B),
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Bạn có chắc chắn muốn thoát tài khoản Trainer hiện tại không?',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
-                              height: 1.4,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(ctx),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF64748B),
-                                    side: BorderSide(color: Colors.grey.shade300),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                  ),
-                                  child: const Text(
-                                    'HỦY BỎ',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(ctx);
-                                    auth.logout();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFE53935),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    'ĐĂNG XUẤT',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  title: 'Đăng xuất tài khoản',
+                  message: 'Bạn có chắc chắn muốn thoát tài khoản Trainer hiện tại không?',
+                  type: NotificationType.warning,
+                  confirmLabel: 'Đăng xuất',
+                  onConfirm: () => auth.logout(),
+                  cancelLabel: 'Hủy bỏ',
                 );
               },
               icon: const Icon(Icons.logout, color: Colors.white, size: 16),
@@ -364,7 +318,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required Color color,
     required String title,
-    required String route,
+    String? route,
+    VoidCallback? onTap,
   }) {
     return Card(
       color: Colors.white,
@@ -384,7 +339,232 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
         ),
         trailing: const Icon(Icons.chevron_right, size: 18, color: Color(0xFF94A3B8)),
-        onTap: () => Navigator.pushNamed(context, route),
+        onTap: onTap ?? () => Navigator.pushNamed(context, route!),
+      ),
+    );
+  }
+}
+
+class _EditProfileSheetContent extends StatefulWidget {
+  final AuthProvider auth;
+  const _EditProfileSheetContent({required this.auth});
+
+  @override
+  State<_EditProfileSheetContent> createState() => _EditProfileSheetContentState();
+}
+
+class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _avatarController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
+
+  final List<String> _predefinedAvatars = [
+    'https://api.dicebear.com/7.x/pixel-art/png?seed=Ash',
+    'https://api.dicebear.com/7.x/pixel-art/png?seed=Misty',
+    'https://api.dicebear.com/7.x/pixel-art/png?seed=Red',
+    'https://api.dicebear.com/7.x/pixel-art/png?seed=Brock',
+    'https://api.dicebear.com/7.x/pixel-art/png?seed=Cynthia',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final user = widget.auth.user;
+    _phoneController.text = user?.phone ?? '';
+    _addressController.text = user?.shippingAddress ?? '';
+    _avatarController.text = user?.avatarUrl ?? '';
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _addressController.dispose();
+    _avatarController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit() async {
+    setState(() => _isSubmitting = true);
+    try {
+      await widget.auth.updateProfile({
+        'phone': _phoneController.text.trim(),
+        'shippingAddress': _addressController.text.trim(),
+        'avatarUrl': _avatarController.text.trim(),
+      });
+      if (mounted) {
+        Navigator.pop(context);
+        showStyledSnackBar(
+          context: context,
+          message: 'Cập nhật hồ sơ Trainer thành công!',
+          type: NotificationType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showStyledSnackBar(
+          context: context,
+          message: 'Lỗi cập nhật: $e',
+          type: NotificationType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Chỉnh Sửa Hồ Sơ Trainer',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Chọn ảnh đại diện Trainer:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Predefined Avatar Selector Grid
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _predefinedAvatars.map((url) {
+                  final isSelected = _avatarController.text == url;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _avatarController.text = url;
+                      });
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFFE53935) : Colors.grey.shade200,
+                          width: isSelected ? 3 : 1.5,
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              // Custom Avatar URL Input
+              TextFormField(
+                controller: _avatarController,
+                decoration: InputDecoration(
+                  labelText: 'Hoặc dán link ảnh tùy chỉnh (URL)',
+                  labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  prefixIcon: const Icon(Icons.link_rounded),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+                onChanged: (val) {
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 16),
+              // Phone Input
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Số điện thoại liên hệ',
+                  labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  prefixIcon: const Icon(Icons.phone_rounded),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 16),
+              // Shipping Address Input
+              TextFormField(
+                controller: _addressController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: 'Địa chỉ giao hàng',
+                  labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  prefixIcon: const Icon(Icons.local_shipping_rounded),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 28),
+              ElevatedButton(
+                onPressed: _isSubmitting ? null : _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE53935),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  minimumSize: const Size(double.infinity, 52),
+                  elevation: 0,
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'LƯU THÔNG TIN HỒ SƠ',
+                        style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -451,11 +631,10 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
             Navigator.pop(dialogCtx); // Close VNPay dialog
           }
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Giao dịch nạp tiền thất bại hoặc bị hủy!'),
-                backgroundColor: Colors.red,
-              ),
+            showStyledSnackBar(
+              context: context,
+              message: 'Giao dịch nạp tiền thất bại hoặc bị hủy!',
+              type: NotificationType.error,
             );
           }
           break;
@@ -467,108 +646,12 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
   }
 
   void _showSuccessDialog(double amount) {
-    showDialog(
+    showNotificationPopup(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFECFDF5),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD1FAE5),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF6EE7B7), width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF10B981),
-                      size: 40,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Nạp tiền thành công!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1E293B),
-                  letterSpacing: 0.2,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Text(
-                  'Đã nạp thành công \$${amount.toStringAsFixed(2)} vào tài khoản Trainer của bạn.',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF475569),
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 28),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE53935),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'XÁC NHẬN (OK)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: 'Nạp tiền thành công!',
+      message: 'Đã nạp thành công \$${amount.toStringAsFixed(2)} vào tài khoản Trainer của bạn.',
+      type: NotificationType.success,
+      confirmLabel: 'Xác nhận (OK)',
     );
   }
 
@@ -671,8 +754,10 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
                           try {
                             await launchUrl(uri, mode: LaunchMode.externalApplication);
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Không thể mở cổng thanh toán VNPay')),
+                            showStyledSnackBar(
+                              context: context,
+                              message: 'Không thể mở cổng thanh toán VNPay',
+                              type: NotificationType.error,
                             );
                           }
                         },
@@ -691,11 +776,10 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
                       OutlinedButton.icon(
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: paymentUrl));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã sao chép liên kết thanh toán VNPay!'),
-                              backgroundColor: Color(0xFF16A34A),
-                            ),
+                          showStyledSnackBar(
+                            context: context,
+                            message: 'Đã sao chép liên kết thanh toán VNPay!',
+                            type: NotificationType.success,
                           );
                         },
                         icon: const Icon(Icons.copy_rounded, color: Color(0xFFE53935), size: 18),
@@ -759,11 +843,10 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập số tiền nạp hợp lệ!'),
-          backgroundColor: Colors.red,
-        ),
+      showStyledSnackBar(
+        context: context,
+        message: 'Vui lòng nhập số tiền nạp hợp lệ!',
+        type: NotificationType.error,
       );
       return;
     }
@@ -790,11 +873,10 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi nạp tiền: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showStyledSnackBar(
+          context: context,
+          message: 'Lỗi nạp tiền: $e',
+          type: NotificationType.error,
         );
       }
     } finally {
@@ -963,4 +1045,3 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
     );
   }
 }
-

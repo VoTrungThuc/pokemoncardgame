@@ -1,3 +1,4 @@
+import 'package:mobile/shared/widgets/notification_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile/features/cart/providers/cart_provider.dart';
@@ -5,6 +6,7 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/features/product/models/comment.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final int productId;
@@ -19,11 +21,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isLoading = true;
   int _quantity = 1;
   bool _isAdding = false;
+  List<Comment> _comments = [];
+  bool _commentsLoading = true;
+  final TextEditingController _commentController = TextEditingController();
+  bool _isSubmittingComment = false;
+  int? _replyingToCommentId;
+  final TextEditingController _replyController = TextEditingController();
+  bool _isSubmittingReply = false;
 
   @override
   void initState() {
     super.initState();
     _fetchDetails();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _replyController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchDetails() async {
@@ -33,12 +49,68 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         _product = p;
         _isLoading = false;
       });
+      _fetchComments();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: ${e.toString()}'), backgroundColor: Colors.red),
+        showStyledSnackBar(
+          context: context,
+          message: 'Lỗi: ${e.toString()}',
+          type: NotificationType.error,
         );
         Navigator.pop(context);
+      }
+    }
+  }
+
+  Future<void> _fetchComments() async {
+    try {
+      final list = await ApiService.getComments(widget.productId);
+      if (mounted) {
+        setState(() {
+          _comments = list;
+          _commentsLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading comments: $e');
+      if (mounted) {
+        setState(() {
+          _commentsLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSubmitComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) {
+      showStyledSnackBar(
+        context: context,
+        message: 'Nội dung nhận xét không được để trống.',
+        type: NotificationType.error,
+      );
+      return;
+    }
+
+    setState(() => _isSubmittingComment = true);
+    try {
+      await ApiService.addComment(widget.productId, text);
+      _commentController.clear();
+      showStyledSnackBar(
+        context: context,
+        message: 'Gửi nhận xét thành công!',
+        type: NotificationType.success,
+      );
+      _fetchComments();
+    } catch (e) {
+      showStyledSnackBar(
+        context: context,
+        message: 'Lỗi: ${e.toString()}',
+        type: NotificationType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingComment = false);
       }
     }
   }
@@ -183,8 +255,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       }
     } catch (err) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $err'), backgroundColor: Colors.red),
+        showStyledSnackBar(
+          context: context,
+          message: 'Lỗi: $err',
+          type: NotificationType.error,
         );
       }
     } finally {
@@ -686,11 +760,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                                         Navigator.pop(context); // Close bottom sheet
 
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Đã gửi đề xuất trao đổi thành công!'),
-                                            backgroundColor: Colors.green,
-                                          ),
+                                        showStyledSnackBar(
+                                          context: context,
+                                          message: 'Đã gửi đề xuất trao đổi thành công!',
+                                          type: NotificationType.success,
                                         );
 
                                         Navigator.pushNamed(context, '/trades');
@@ -698,11 +771,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         setModalState(() {
                                           isSubmitting = false;
                                         });
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Lỗi: ${err.toString()}'),
-                                            backgroundColor: Colors.red,
-                                          ),
+                                        showStyledSnackBar(
+                                          context: context,
+                                          message: 'Lỗi: ${err.toString()}',
+                                          type: NotificationType.error,
                                         );
                                       }
                                     },
@@ -735,6 +807,430 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           },
         );
       },
+    );
+  }
+
+  Future<void> _handleSendReply(int parentId) async {
+    final text = _replyController.text.trim();
+    if (text.isEmpty) {
+      showStyledSnackBar(
+        context: context,
+        message: 'Nội dung phản hồi không được để trống.',
+        type: NotificationType.error,
+      );
+      return;
+    }
+
+    setState(() => _isSubmittingReply = true);
+    try {
+      await ApiService.addComment(widget.productId, text, parentId: parentId);
+      _replyController.clear();
+      setState(() {
+        _replyingToCommentId = null;
+      });
+      showStyledSnackBar(
+        context: context,
+        message: 'Đã gửi phản hồi thành công!',
+        type: NotificationType.success,
+      );
+      _fetchComments();
+    } catch (e) {
+      showStyledSnackBar(
+        context: context,
+        message: 'Lỗi: ${e.toString()}',
+        type: NotificationType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingReply = false);
+      }
+    }
+  }
+
+  Widget _buildCommentCard(Comment comment, {bool isReply = false}) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = authProvider.user?.role == 'ADMIN';
+    final isLoggedIn = authProvider.isAuthenticated;
+
+    String formattedDate = '';
+    try {
+      final diff = DateTime.now().difference(comment.createdAt);
+      if (diff.inMinutes < 1) {
+        formattedDate = 'Vừa xong';
+      } else if (diff.inHours < 1) {
+        formattedDate = '${diff.inMinutes} phút trước';
+      } else if (diff.inDays < 1) {
+        formattedDate = '${diff.inHours} giờ trước';
+      } else if (diff.inDays < 7) {
+        formattedDate = '${diff.inDays} ngày trước';
+      } else {
+        formattedDate = '${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}';
+      }
+    } catch (_) {
+      formattedDate = 'Gần đây';
+    }
+
+    final hasAvatar = comment.avatarUrl != null && comment.avatarUrl!.isNotEmpty;
+    final isReplyingThis = _replyingToCommentId == comment.id;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: isReply ? 8 : 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isReply ? const Color(0xFFF8FAFC) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isReply ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9)),
+        boxShadow: isReply
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              hasAvatar
+                  ? CircleAvatar(
+                      radius: isReply ? 14 : 18,
+                      backgroundImage: NetworkImage(ApiService.resolveImageUrl(comment.avatarUrl)),
+                      backgroundColor: const Color(0xFFF1F5F9),
+                    )
+                  : Container(
+                      width: isReply ? 28 : 36,
+                      height: isReply ? 28 : 36,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFEAEA),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        comment.username.isNotEmpty ? comment.username.substring(0, 2).toUpperCase() : 'US',
+                        style: TextStyle(
+                          fontSize: isReply ? 10 : 12,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFFE53935),
+                        ),
+                      ),
+                    ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '@${comment.username}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        Text(
+                          formattedDate,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      comment.content,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (!isReply && isLoggedIn && isAdmin) ...[
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            if (_replyingToCommentId == comment.id) {
+                              _replyingToCommentId = null;
+                              _replyController.clear();
+                            } else {
+                              _replyingToCommentId = comment.id;
+                              _replyController.text = '@${comment.username} ';
+                            }
+                          });
+                        },
+                        child: Text(
+                          isReplyingThis ? 'HỦY TRẢ LỜI' : 'TRẢ LỜI 💬',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFE53935),
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          if (isReplyingThis) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE53935).withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _replyController,
+                      maxLines: null,
+                      autofocus: true,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+                      decoration: const InputDecoration(
+                        hintText: 'Nhập phản hồi...',
+                        hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.normal),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _isSubmittingReply ? null : () => _handleSendReply(comment.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE53935),
+                        shape: BoxShape.circle,
+                      ),
+                      child: _isSubmittingReply
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded, color: Colors.white, size: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentsSection() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isLoggedIn = authProvider.isAuthenticated;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 32, thickness: 1, color: Color(0xFFE2E8F0)),
+          Row(
+            children: [
+              const Icon(Icons.comment_outlined, color: Color(0xFFE53935), size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'NHẬN XÉT CỦA HUẤN LUYỆN VIÊN',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E293B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (!_commentsLoading)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${_comments.length}',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Write Comment Area
+          if (isLoggedIn) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      maxLines: null,
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B), fontWeight: FontWeight.w600),
+                      decoration: const InputDecoration(
+                        hintText: 'Chia sẻ nhận xét của bạn về thẻ bài này...',
+                        hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.normal),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _isSubmittingComment ? null : _handleSubmitComment,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE53935),
+                        shape: BoxShape.circle,
+                      ),
+                      child: _isSubmittingComment
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF5F5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFFEE2E2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline_rounded, color: Color(0xFFE53935), size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Đăng nhập để gửi nhận xét của bạn dưới sản phẩm này.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE53935),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'ĐĂNG NHẬP',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+
+          // Comments List
+          if (_commentsLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: CircularProgressIndicator(color: Color(0xFFE53935)),
+              ),
+            )
+          else if (_comments.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    Icon(Icons.chat_bubble_outline_rounded, color: const Color(0xFFE53935).withOpacity(0.3), size: 40),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Chưa có nhận xét nào cho sản phẩm này.',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Hãy là người đầu tiên đưa ra nhận xét nhé!',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            () {
+              final parents = _comments.where((c) => c.parentId == null).toList();
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: parents.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final parent = parents[index];
+                  final replies = _comments.where((c) => c.parentId == parent.id).toList();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildCommentCard(parent, isReply: false),
+                      if (replies.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 32, top: 4),
+                          child: Column(
+                            children: replies.map((reply) => _buildCommentCard(reply, isReply: true)).toList(),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              );
+            }(),
+          ],
+        ],
+      ),
     );
   }
 
@@ -904,6 +1400,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ],
                   ),
                 ),
+                _buildCommentsSection(),
               ],
             ),
           ),

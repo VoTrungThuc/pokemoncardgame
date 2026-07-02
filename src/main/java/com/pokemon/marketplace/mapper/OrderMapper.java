@@ -28,6 +28,7 @@ public class OrderMapper {
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .createdAt(order.getCreatedAt())
+                .auctionId(order.getAuctionId())
                 .items(order.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()))
                 .build();
     }

@@ -41,6 +41,7 @@ public class UserController {
                         .shippingAddress(user.getShippingAddress())
                         .role(user.getRole())
                         .balance(user.getBalance())
+                        .avatarUrl(user.getAvatarUrl())
                         .build())
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(userDTOs, "Fetched all users successfully"));
@@ -79,6 +80,7 @@ public class UserController {
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
                 .balance(savedUser.getBalance())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Admin created successfully"));
@@ -105,6 +107,7 @@ public class UserController {
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
                 .balance(savedUser.getBalance())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "User role updated successfully"));
@@ -124,6 +127,7 @@ public class UserController {
                 .shippingAddress(user.getShippingAddress())
                 .role(user.getRole())
                 .balance(user.getBalance() != null ? user.getBalance() : 0.0)
+                .avatarUrl(user.getAvatarUrl())
                 .build();
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Profile fetched successfully"));
     }
@@ -151,6 +155,7 @@ public class UserController {
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
                 .balance(savedUser.getBalance())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Deposited " + amount + " successfully"));
     }
@@ -175,6 +180,7 @@ public class UserController {
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
                 .balance(savedUser.getBalance())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Refunded " + amount + " successfully"));
     }
@@ -204,7 +210,41 @@ public class UserController {
                 .shippingAddress(savedUser.getShippingAddress())
                 .role(savedUser.getRole())
                 .balance(savedUser.getBalance())
+                .avatarUrl(savedUser.getAvatarUrl())
                 .build();
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Deducted " + amount + " successfully"));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserDTO>> updateProfile(
+            @Valid @RequestBody UserDTO updateDTO) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        if (updateDTO.getPhone() != null) {
+            user.setPhone(updateDTO.getPhone().trim());
+        }
+        if (updateDTO.getShippingAddress() != null) {
+            user.setShippingAddress(updateDTO.getShippingAddress().trim());
+        }
+        if (updateDTO.getAvatarUrl() != null) {
+            user.setAvatarUrl(updateDTO.getAvatarUrl().trim());
+        }
+        
+        User savedUser = userRepository.save(user);
+        
+        UserDTO responseDTO = UserDTO.builder()
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .email(savedUser.getEmail())
+                .phone(savedUser.getPhone())
+                .shippingAddress(savedUser.getShippingAddress())
+                .role(savedUser.getRole())
+                .balance(savedUser.getBalance())
+                .avatarUrl(savedUser.getAvatarUrl())
+                .build();
+        log.info("Profile updated successfully for user: {}", username);
+        return ResponseEntity.ok(ApiResponse.success(responseDTO, "Profile updated successfully"));
     }
 }

@@ -167,7 +167,19 @@ export default function Header({
               className="flex items-center gap-2 text-left cursor-pointer group"
               onClick={() => handleTabClick('profile')}
             >
-              {activeUser?.role === 'ADMIN' ? (
+              {activeUser?.avatarUrl ? (
+                <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white ring-2 ring-red-100 group-hover:ring-[#e53935]/30 group-hover:scale-105 transition-all shadow-md bg-white">
+                  <img 
+                    src={activeUser.avatarUrl} 
+                    alt={activeUser.username} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = activeUser.role === 'ADMIN' ? '/images/admin_logo.png' : 'https://api.dicebear.com/7.x/pixel-art/png?seed=Ash';
+                    }} 
+                  />
+                </div>
+              ) : activeUser?.role === 'ADMIN' ? (
                 <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white ring-2 ring-red-100 group-hover:ring-[#e53935]/30 group-hover:scale-105 transition-all shadow-md bg-white">
                   <img src="/images/admin_logo.png" alt="Admin Logo" className="w-full h-full object-cover" />
                 </div>

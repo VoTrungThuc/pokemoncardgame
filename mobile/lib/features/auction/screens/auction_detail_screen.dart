@@ -775,7 +775,9 @@ class _AuctionDetailScreenState extends State<AuctionDetailScreen> {
                     child: Text(
                       _auction!.status.toUpperCase() == 'CLAIMED'
                           ? 'Phiên đấu giá đã kết thúc và được nhận bởi người thắng cuộc.'
-                          : 'Phiên đấu giá đã kết thúc. Chúc bạn may mắn lần sau!',
+                          : _auction!.status.toUpperCase() == 'CANCELLED'
+                              ? 'Kết quả phiên đấu giá này đã bị hủy do không thanh toán.'
+                              : 'Phiên đấu giá đã kết thúc. Chúc bạn may mắn lần sau!',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF64748B),

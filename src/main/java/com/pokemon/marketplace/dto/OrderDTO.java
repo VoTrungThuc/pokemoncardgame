@@ -25,5 +25,6 @@ public class OrderDTO {
     private BigDecimal totalAmount;
     private OrderStatus status;
     private LocalDateTime createdAt;
+    private Long auctionId;
     private List<OrderItemDTO> items;
 }

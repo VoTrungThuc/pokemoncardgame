@@ -1,3 +1,4 @@
+import 'package:mobile/shared/widgets/notification_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
@@ -69,15 +70,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
       if (id != null) {
         await ApiService.updateProduct(id, payload);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã cập nhật thẻ bài thành công!'), backgroundColor: Colors.green),
+          showStyledSnackBar(
+            context: context,
+            message: 'Đã cập nhật thẻ bài thành công!',
+            type: NotificationType.success,
           );
         }
       } else {
         await ApiService.createProduct(payload);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã thêm thẻ bài mới thành công!'), backgroundColor: Colors.green),
+          showStyledSnackBar(
+            context: context,
+            message: 'Đã thêm thẻ bài mới thành công!',
+            type: NotificationType.success,
           );
         }
       }
@@ -86,8 +91,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi lưu thẻ bài: $e'), backgroundColor: Colors.red),
+        showStyledSnackBar(
+          context: context,
+          message: 'Lỗi khi lưu thẻ bài: $e',
+          type: NotificationType.error,
         );
       }
     }
@@ -111,15 +118,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
               try {
                 await ApiService.deleteProduct(id);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã xóa thẻ bài thành công!'), backgroundColor: Colors.green),
+                  showStyledSnackBar(
+                    context: context,
+                    message: 'Đã xóa thẻ bài thành công!',
+                    type: NotificationType.success,
                   );
                   Provider.of<MarketProvider>(context, listen: false).fetchProducts();
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi khi xóa thẻ bài: $e'), backgroundColor: Colors.red),
+                  showStyledSnackBar(
+                    context: context,
+                    message: 'Lỗi khi xóa thẻ bài: $e',
+                    type: NotificationType.error,
                   );
                 }
               }
