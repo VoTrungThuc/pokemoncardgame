@@ -6,51 +6,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-backend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/pokemon-be:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   deploy:
-    needs: build-backend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Write production .env on server
+      - name: Deploy over SSH (build on server)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 20m
           script: |
-            mkdir -p ~/pokemon
-            cat > ~/pokemon/.env <<'EOF'
+            set -e
+            # Get / update the code
+            if [ -d ~/pokemon/.git ]; then
+              cd ~/pokemon
+              git fetch --all
+              git reset --hard origin/main
+            else
+              git clone https://github.com/TranHoangTrungHieu/PRM-project.git ~/pokemon
+              cd ~/pokemon
+            fi
+
+            # Write production .env from secrets
+            cat > .env <<'EOF'
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRATION=36000000
             VNP_TMN_CODE=${{ secrets.VNP_TMN_CODE }}
@@ -60,31 +39,9 @@ jobs:
             MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
             MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
             EOF
-            chmod 600 ~/pokemon/.env
+            chmod 600 .env
 
-      - name: Copy prod compose + deploy
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "docker-compose.prod.yml"
-          target: "~/pokemon/"
-
-      - name: Pull & restart via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd ~/pokemon
-            # NOTE: the GHCR package "pokemon-be" must be PUBLIC, or create a
-            # fine-grained PAT with read:packages and store it as secret GHCR_TOKEN,
-            # then run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            # point compose at the prebuilt GHCR image for this repo owner (lowercase)
-            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            sed -i "s#repoowner#$OWNER#" docker-compose.prod.yml
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            docker image prune -f
+            # Build & restart containers
+            sudo docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            sudo docker image prune -f
+            sudo docker compose -f docker-compose.prod.yml ps
