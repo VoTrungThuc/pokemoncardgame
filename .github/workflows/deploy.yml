@@ -30,6 +30,7 @@ jobs:
 
             # Write production .env from secrets
             cat > .env <<'EOF'
+            MONGO_URI=${{ secrets.MONGO_URI }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRATION=36000000
             VNP_TMN_CODE=${{ secrets.VNP_TMN_CODE }}
