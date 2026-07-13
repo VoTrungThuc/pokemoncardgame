@@ -186,7 +186,11 @@ class ApiService {
   // Resolve Image URL
   static String resolveImageUrl(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
-      return 'https://images.pokemontcg.io/swsh35/20.png';
+      return '$baseUrl/img/swsh35/20.png';
+    }
+    // External Pokémon TCG CDN -> proxy through our own backend (domain/baseUrl)
+    if (imageUrl.startsWith('https://images.pokemontcg.io/')) {
+      return '$baseUrl/img/${imageUrl.substring('https://images.pokemontcg.io/'.length)}';
     }
     if (imageUrl.startsWith('http')) {
       return imageUrl;
