@@ -4,6 +4,8 @@ import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/core/widgets/retry_network_image.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateAuctionScreen extends StatefulWidget {
   const CreateAuctionScreen({super.key});
@@ -24,7 +26,9 @@ class _CreateAuctionScreenState extends State<CreateAuctionScreen> {
   String _selectedCondition = 'Mint';
   int _selectedDurationHours = 24;
   bool _isSubmitting = false;
-  
+  final ImagePicker _picker = ImagePicker();
+  bool _uploadingImage = false;
+
   final List<String> _conditions = ['Mint', 'Near Mint', 'Excellent', 'Good', 'Played'];
   final List<int> _durations = [1, 3, 6, 12, 24, 48, 72];
 
@@ -52,6 +56,50 @@ class _CreateAuctionScreenState extends State<CreateAuctionScreen> {
       _rarityController.text = product.ram ?? 'Rare';
       _currentBidController.text = product.activePrice.toStringAsFixed(2);
     });
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(source: source, imageQuality: 80);
+      if (picked == null) return;
+      setState(() => _uploadingImage = true);
+      final url = await ApiService.uploadImage(File(picked.path));
+      setState(() {
+        _imageUrlController.text = url;
+        _uploadingImage = false;
+      });
+    } catch (e) {
+      setState(() => _uploadingImage = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải ảnh: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _showImageSourceSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Chụp ảnh từ máy ảnh'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source != null) await _pickImage(source);
   }
 
   void _showCardSelector(List<Product> products) {
@@ -437,12 +485,42 @@ class _CreateAuctionScreenState extends State<CreateAuctionScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Image URL field
-              const Text('Đường dẫn ảnh thẻ bài:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+              // Image field
+              const Text('Ảnh thẻ bài:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
               const SizedBox(height: 6),
+              ElevatedButton.icon(
+                onPressed: _uploadingImage ? null : _showImageSourceSheet,
+                icon: _uploadingImage
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.add_a_photo, size: 16),
+                label: Text(_uploadingImage ? 'Đang tải ảnh...' : 'Chọn ảnh từ điện thoại'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  foregroundColor: const Color(0xFF2563EB),
+                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (_imageUrlController.text.isNotEmpty)
+                Container(
+                  height: 140,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: RetryNetworkImage(
+                    url: ApiService.resolveImageUrl(_imageUrlController.text),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _imageUrlController,
-                decoration: const InputDecoration(hintText: 'Đường dẫn ảnh (URL)...'),
+                decoration: const InputDecoration(hintText: 'Hoặc dán đường dẫn ảnh (URL)...'),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Không được bỏ trống ảnh thẻ bài' : null,
               ),
               const SizedBox(height: 16),

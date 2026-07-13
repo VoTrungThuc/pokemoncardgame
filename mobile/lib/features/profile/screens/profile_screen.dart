@@ -10,6 +10,8 @@ import 'package:mobile/core/widgets/retry_network_image.dart';
 import 'package:mobile/features/order/models/order.dart';
 import 'package:mobile/features/auth/models/user.dart';
 import 'dart:math';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -366,6 +368,8 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
   final _avatarController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
+  bool _uploadingAvatar = false;
+  final ImagePicker _avatarPicker = ImagePicker();
 
   final List<String> _predefinedAvatars = [
     'https://api.dicebear.com/7.x/pixel-art/png?seed=Ash',
@@ -390,6 +394,52 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
     _addressController.dispose();
     _avatarController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAvatar(ImageSource source) async {
+    try {
+      final picked = await _avatarPicker.pickImage(source: source, imageQuality: 80);
+      if (picked == null) return;
+      setState(() => _uploadingAvatar = true);
+      final url = await ApiService.uploadImage(File(picked.path));
+      setState(() {
+        _avatarController.text = url;
+        _uploadingAvatar = false;
+      });
+    } catch (e) {
+      setState(() => _uploadingAvatar = false);
+      if (mounted) {
+        showStyledSnackBar(
+          context: context,
+          message: 'Lỗi tải ảnh: $e',
+          type: NotificationType.error,
+        );
+      }
+    }
+  }
+
+  Future<void> _showAvatarSourceSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Chụp ảnh từ máy ảnh'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source != null) await _pickAvatar(source);
   }
 
   Future<void> _handleSubmit() async {
@@ -497,6 +547,39 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: _uploadingAvatar ? null : _showAvatarSourceSheet,
+                icon: _uploadingAvatar
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.add_a_photo, size: 16),
+                label: Text(_uploadingAvatar ? 'Đang tải ảnh...' : 'Chọn ảnh từ điện thoại'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  foregroundColor: const Color(0xFF2563EB),
+                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (_avatarController.text.isNotEmpty)
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                    ),
+                    child: ClipOval(
+                      child: RetryNetworkImage(
+                        url: _avatarController.text,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 20),
               // Custom Avatar URL Input
               TextFormField(
