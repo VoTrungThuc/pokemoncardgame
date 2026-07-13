@@ -10,6 +10,7 @@ import com.pokemon.marketplace.mapper.ChatMessageMapper;
 import com.pokemon.marketplace.mapper.UserMapper;
 import com.pokemon.marketplace.repository.ChatMessageRepository;
 import com.pokemon.marketplace.repository.UserRepository;
+import com.pokemon.marketplace.infrastructure.fcm.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class ChatService {
     private final ChatMessageMapper chatMessageMapper;
     private final UserMapper userMapper;
     private final MongoTemplate mongoTemplate;
+    private final FcmService fcmService;
 
     private static final List<String> AUTO_REPLIES = Arrays.asList(
             "Xin chào Trainer! Chào mừng đến với PokeCard Store 🎴 Bạn đang tìm kiếm thẻ bài Pokemon nào? Chúng tôi có hơn 35 loại thẻ từ Common đến Illustrator, bao gồm VMAX, VSTAR, Gold Star và thẻ Base Set gốc từ 1999!",
@@ -76,7 +78,19 @@ public class ChatService {
                 .build();
         chatMessageRepository.save(storeMsg);
 
+        // Push notification to the customer
+        if (customer.getFcmToken() != null && !customer.getFcmToken().isBlank()) {
+            fcmService.sendToToken(customer.getFcmToken(), "PokeCard Store", message);
+        }
+
         return chatMessageMapper.toDTO(storeMsg);
+    }
+
+    public void registerToken(Long userId, String token) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+        user.setFcmToken(token);
+        userRepository.save(user);
     }
 
     @Transactional
@@ -98,7 +112,16 @@ public class ChatService {
                 .build();
         chatMessageRepository.save(customerMsg);
 
-        
+        // Push notification to all admins with a registered token
+        List<String> adminTokens = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.ADMIN)
+                .map(User::getFcmToken)
+                .filter(t -> t != null && !t.isBlank())
+                .toList();
+        if (!adminTokens.isEmpty()) {
+            fcmService.sendToTokens(adminTokens, "Tin nhắn mới từ " + user.getUsername(), message);
+        }
+
         boolean hasAdminReplied = chatMessageRepository.existsByUserIdAndSenderAndIsAutoReply(userId, "STORE", false);
 
         

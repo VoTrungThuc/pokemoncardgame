@@ -35,6 +35,9 @@ public class User {
     @Field("avatar_url")
     private String avatarUrl;
 
+    @Field("fcm_token")
+    private String fcmToken;
+
     @Builder.Default
     private Double balance = 0.0;
 }

@@ -47,6 +47,11 @@ class AuthProvider with ChangeNotifier {
       final data = await ApiService.login(username, password);
       _user = User.fromJson(data);
       _isAuthenticated = true;
+      // Register FCM token so the backend can push chat notifications
+      final token = await ApiService.getFcmToken();
+      if (token != null && token.isNotEmpty) {
+        await ApiService.registerFcmToken(token);
+      }
     } catch (e) {
       _clearSession();
       rethrow;

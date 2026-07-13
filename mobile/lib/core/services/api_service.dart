@@ -9,6 +9,7 @@ import 'package:mobile/features/trade/models/trade.dart';
 import 'package:mobile/features/auction/models/auction.dart';
 import 'package:mobile/features/chat/models/chat_message.dart';
 import 'package:mobile/features/auth/models/user.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mobile/features/product/models/comment.dart';
 
 class ApiService {
@@ -262,6 +263,25 @@ class ApiService {
     await prefs.remove('token');
     await prefs.remove('refreshToken');
     await prefs.remove('user');
+  }
+
+  // Register Firebase Cloud Messaging token so the backend can push notifications
+  static Future<void> registerFcmToken(String token) async {
+    try {
+      await post('/api/fcm/token?token=$token');
+    } catch (_) {
+      // non-fatal: push simply won't work until next login
+    }
+  }
+
+  // Retrieve the current Firebase Cloud Messaging token (if available)
+  static Future<String?> getFcmToken() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      return await messaging.getToken();
+    } catch (_) {
+      return null;
+    }
   }
 
   // Products & Cards

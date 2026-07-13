@@ -58,6 +58,8 @@ jobs:
           VNP_RETURN_URL=${{ secrets.VNP_RETURN_URL }}
           MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
           MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          FCM_PROJECT_ID=${{ secrets.FCM_PROJECT_ID }}
+          FCM_SERVICE_ACCOUNT_B64=${{ secrets.FCM_SERVICE_ACCOUNT_B64 }}
           EOF
 
       - name: Deploy over SSH (pull image only, no build on server)

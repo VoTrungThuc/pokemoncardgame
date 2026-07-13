@@ -23,6 +23,8 @@ services:
       - VNP_RETURN_URL=${VNP_RETURN_URL}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - FCM_PROJECT_ID=${FCM_PROJECT_ID}
+      - FCM_SERVICE_ACCOUNT_B64=${FCM_SERVICE_ACCOUNT_B64}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 15s

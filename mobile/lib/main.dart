@@ -21,9 +21,27 @@ import 'package:mobile/features/notification/screens/notification_list_screen.da
 import 'package:mobile/features/auction/screens/auction_detail_screen.dart';
 import 'package:mobile/features/auction/screens/sales_stats_screen.dart';
 import 'package:mobile/features/auction/screens/create_auction_screen.dart';
+import 'package:mobile/core/services/notification_service.dart';
+import 'package:mobile/core/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  _initNotifications();
   runApp(const MyApp());
+}
+
+Future<void> _initNotifications() async {
+  // Register the FCM token if the user is already logged in (otherwise it
+  // will be registered right after a successful login elsewhere).
+  await NotificationService.init(
+    onTokenReceived: (token) async {
+      final prefs = await SharedPreferences.getInstance();
+      final existing = prefs.getString('token');
+      if (existing != null && existing.isNotEmpty) {
+        await ApiService.registerFcmToken(token);
+      }
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {

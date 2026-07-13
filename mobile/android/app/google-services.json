@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "477742023986",
+    "project_id": "pokemon-noti",
+    "storage_bucket": "pokemon-noti.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:477742023986:android:f1771642574a43c71fc32b",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIXYSKQD2GNxIHlCm9u_4oBw-VhWuzbOU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
