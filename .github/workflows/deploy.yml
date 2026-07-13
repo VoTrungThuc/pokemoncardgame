@@ -85,7 +85,7 @@ jobs:
             echo "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
             echo "==> reload nginx config =="
-            sudo cp -f deploy/nginx.conf /etc/nginx/sites-available/default
+            sudo cp -f deploy/nginx.conf /etc/nginx/sites-available/pokemon
             sudo nginx -t && sudo systemctl reload nginx || true
 
             echo "==> pull and run =="
