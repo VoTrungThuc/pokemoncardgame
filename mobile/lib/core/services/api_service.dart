@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/features/cart/models/cart_item.dart';
@@ -604,7 +605,16 @@ class ApiService {
     final url = Uri.parse('$baseUrl/api/upload/image');
     final request = http.MultipartRequest('POST', url);
     request.headers.addAll(await _headers());
-    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    final bytes = await file.readAsBytes();
+    final mime = _detectImageMime(bytes) ?? 'image/jpeg';
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: file.path.split('/').last,
+        contentType: MediaType.parse(mime),
+      ),
+    );
     final streamed = await request.send();
     final resp = await http.Response.fromStream(streamed);
     final data = jsonDecode(resp.body);
@@ -612,6 +622,28 @@ class ApiService {
       return data['url'];
     }
     throw Exception(data['message'] ?? 'Upload failed');
+  }
+
+  static String? _detectImageMime(List<int> bytes) {
+    if (bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return 'image/jpeg';
+    }
+    if (bytes.length >= 8 &&
+        bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47 &&
+        bytes[4] == 0x0D && bytes[5] == 0x0A && bytes[6] == 0x1A && bytes[7] == 0x0A) {
+      return 'image/png';
+    }
+    if (bytes.length >= 6 &&
+        bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38 &&
+        (bytes[4] == 0x37 || bytes[4] == 0x39) && bytes[5] == 0x61) {
+      return 'image/gif';
+    }
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+        bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+      return 'image/webp';
+    }
+    return null;
   }
 
   static Future<List<User>> getChatUsers() async {
