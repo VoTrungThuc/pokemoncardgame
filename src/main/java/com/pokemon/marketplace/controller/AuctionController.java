@@ -70,6 +70,7 @@ public class AuctionController {
     }
 
     @PostMapping("/reset")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<AuctionDTO>>> resetAuctions() {
         log.info("REST request to reset auctions");
         List<AuctionDTO> list = auctionService.resetAuctions();
@@ -95,6 +96,7 @@ public class AuctionController {
     }
 
     @PostMapping("/{id}/end")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AuctionDTO>> endAuction(@PathVariable Long id) {
         log.info("REST request to force end auction ID: {}", id);
         AuctionDTO updated = auctionService.endAuction(id);

@@ -47,12 +47,14 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 
                 .requestMatchers("/actuator/health").permitAll()
+
+                .requestMatchers("/api/payment/vnpay-callback", "/api/payment/vnpay-ipn").permitAll()
                 
                 .requestMatchers("/h2-console/**").permitAll()
                 
                 .requestMatchers("/images/**").permitAll()
 
-                .requestMatchers("/api/upload/**").permitAll()
+                .requestMatchers("/api/upload/**").authenticated()
                 
                 .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/products/{productId}/comments").authenticated()
