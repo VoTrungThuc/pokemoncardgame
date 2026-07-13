@@ -3,6 +3,7 @@ class ChatMessage {
   final int userId;
   final String sender;
   final String message;
+  final String? imageUrl;
   final bool isAutoReply;
   final String createdAt;
 
@@ -11,6 +12,7 @@ class ChatMessage {
     required this.userId,
     required this.sender,
     required this.message,
+    this.imageUrl,
     required this.isAutoReply,
     required this.createdAt,
   });
@@ -18,11 +20,12 @@ class ChatMessage {
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      userId: json['userId'] is int 
-          ? json['userId'] 
+      userId: json['userId'] is int
+          ? json['userId']
           : (json['user_id'] != null ? int.parse(json['user_id'].toString()) : 0),
       sender: json['sender'] ?? 'CUSTOMER',
       message: json['message'] ?? '',
+      imageUrl: json['imageUrl'] ?? json['image_url'],
       isAutoReply: json['isAutoReply'] ?? json['is_auto_reply'] ?? false,
       createdAt: json['createdAt'] ?? json['created_at'] ?? '',
     );
@@ -34,6 +37,7 @@ class ChatMessage {
       'userId': userId,
       'sender': sender,
       'message': message,
+      'imageUrl': imageUrl,
       'isAutoReply': isAutoReply,
       'createdAt': createdAt,
     };

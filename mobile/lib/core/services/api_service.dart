@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -586,13 +587,31 @@ class ApiService {
     return [];
   }
 
-  static Future<ChatMessage> sendChatMessage(String message) async {
-    final response = await post('/api/chat?message=${Uri.encodeComponent(message)}', {});
+  static Future<ChatMessage> sendChatMessage(String message, {String? imageUrl}) async {
+    final uri = imageUrl != null
+        ? '/api/chat?message=${Uri.encodeComponent(message)}&imageUrl=${Uri.encodeComponent(imageUrl)}'
+        : '/api/chat?message=${Uri.encodeComponent(message)}';
+    final response = await post(uri, {});
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 && data['success'] == true) {
       return ChatMessage.fromJson(data['data']);
     }
     throw Exception(data['message'] ?? 'Failed to send message');
+  }
+
+  // Upload an image and return its public URL
+  static Future<String> uploadImage(File file) async {
+    final url = Uri.parse('$baseUrl/api/upload/image');
+    final request = http.MultipartRequest('POST', url);
+    request.headers.addAll(await _headers());
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    final streamed = await request.send();
+    final resp = await http.Response.fromStream(streamed);
+    final data = jsonDecode(resp.body);
+    if (resp.statusCode == 200 && data['success'] == true) {
+      return data['url'];
+    }
+    throw Exception(data['message'] ?? 'Upload failed');
   }
 
   static Future<List<User>> getChatUsers() async {
@@ -619,8 +638,11 @@ class ApiService {
     return [];
   }
 
-  static Future<ChatMessage> sendAdminMessage(int userId, String message) async {
-    final response = await post('/api/chat/admin/$userId?message=${Uri.encodeComponent(message)}', {});
+  static Future<ChatMessage> sendAdminMessage(int userId, String message, {String? imageUrl}) async {
+    final uri = imageUrl != null
+        ? '/api/chat/admin/$userId?message=${Uri.encodeComponent(message)}&imageUrl=${Uri.encodeComponent(imageUrl)}'
+        : '/api/chat/admin/$userId?message=${Uri.encodeComponent(message)}';
+    final response = await post(uri, {});
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 && data['success'] == true) {
       return ChatMessage.fromJson(data['data']);

@@ -27,6 +27,9 @@ public class ChatMessage {
 
     private String message;
 
+    @Field("image_url")
+    private String imageUrl;
+
     @Field("is_auto_reply")
     @Builder.Default
     private boolean isAutoReply = false;

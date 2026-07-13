@@ -39,10 +39,12 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendMessage(@RequestParam String message) {
+    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendMessage(
+            @RequestParam String message,
+            @RequestParam(required = false) String imageUrl) {
         Long userId = getAuthenticatedUserId();
         log.info("REST request to send message from User ID: {}", userId);
-        ChatMessageDTO chatMessage = chatService.sendMessage(userId, message);
+        ChatMessageDTO chatMessage = chatService.sendMessage(userId, message, imageUrl);
         return ResponseEntity.ok(ApiResponse.success(chatMessage, "Message sent successfully"));
     }
 
@@ -61,9 +63,12 @@ public class ChatController {
     }
 
     @PostMapping("/admin/{userId}")
-    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendAdminMessage(@PathVariable Long userId, @RequestParam String message) {
+    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendAdminMessage(
+            @PathVariable Long userId,
+            @RequestParam String message,
+            @RequestParam(required = false) String imageUrl) {
         log.info("REST request by Admin to send message to Customer User ID: {}", userId);
-        ChatMessageDTO chatMessage = chatService.sendAdminMessage(userId, message);
+        ChatMessageDTO chatMessage = chatService.sendAdminMessage(userId, message, imageUrl);
         return ResponseEntity.ok(ApiResponse.success(chatMessage, "Admin message sent successfully"));
     }
 }

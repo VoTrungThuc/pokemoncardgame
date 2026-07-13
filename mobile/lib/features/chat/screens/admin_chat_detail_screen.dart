@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile/features/chat/models/chat_message.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class AdminChatDetailScreen extends StatefulWidget {
   final int userId;
@@ -96,6 +99,69 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
     }
   }
 
+  Future<void> _pickAndSendImage() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Chụp ảnh'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await picker.pickImage(source: source, imageQuality: 80);
+    if (picked == null) return;
+
+    final file = File(picked.path);
+    if (mounted) {
+      setState(() {
+        _messages.add(ChatMessage(
+          id: -DateTime.now().millisecondsSinceEpoch,
+          userId: widget.userId,
+          sender: 'STORE',
+          message: '',
+          imageUrl: picked.path,
+          isAutoReply: false,
+          createdAt: '',
+        ));
+      });
+      _scrollToBottom();
+    }
+
+    try {
+      final url = await ApiService.uploadImage(file);
+      final msg = await ApiService.sendAdminMessage(widget.userId, '', imageUrl: url);
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((m) => m.id < 0);
+          _messages.add(msg);
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _messages.removeWhere((m) => m.id < 0));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi gửi ảnh: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Widget _buildMessageBubble(ChatMessage msg) {
     final isMe = msg.sender == 'STORE';
     return Align(
@@ -113,12 +179,21 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
           ),
         ),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        child: Text(
-          msg.message,
-          style: TextStyle(
-            color: isMe ? Colors.white : const Color(0xFF1E293B),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+        child: msg.imageUrl != null && msg.imageUrl!.isNotEmpty
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: msg.imageUrl!.startsWith('http')
+                    ? RetryNetworkImage(url: msg.imageUrl!, fit: BoxFit.cover)
+                    : Image.file(File(msg.imageUrl!), fit: BoxFit.cover),
+              )
+            : Text(
+                msg.message,
+                style: TextStyle(
+                  color: isMe ? Colors.white : const Color(0xFF1E293B),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
           ),
         ),
       ),
@@ -180,6 +255,15 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    child: IconButton(
+                      icon: const Icon(Icons.camera_alt, color: Color(0xFFE53935), size: 20),
+                      onPressed: _pickAndSendImage,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: const Color(0xFFE53935),

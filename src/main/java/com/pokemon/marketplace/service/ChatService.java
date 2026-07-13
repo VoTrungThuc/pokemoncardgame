@@ -64,15 +64,17 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatMessageDTO sendAdminMessage(Long customerUserId, String message) {
+    public ChatMessageDTO sendAdminMessage(Long customerUserId, String message, String imageUrl) {
         log.info("Admin sending message to User ID: {}, message: {}", customerUserId, message);
         User customer = userRepository.findById(customerUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with ID: " + customerUserId));
 
+        String body = (message != null && !message.isBlank()) ? message : "[Hình ảnh]";
         ChatMessage storeMsg = ChatMessage.builder()
                 .user(customer)
                 .sender("STORE")
-                .message(message)
+                .message(body)
+                .imageUrl(imageUrl)
                 .isAutoReply(false)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -80,7 +82,7 @@ public class ChatService {
 
         // Push notification to the customer
         if (customer.getFcmToken() != null && !customer.getFcmToken().isBlank()) {
-            fcmService.sendToToken(customer.getFcmToken(), "PokeCard Store", message);
+            fcmService.sendToToken(customer.getFcmToken(), "PokeCard Store", body);
         }
 
         return chatMessageMapper.toDTO(storeMsg);
@@ -94,19 +96,19 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatMessageDTO sendMessage(Long userId, String message) {
+    public ChatMessageDTO sendMessage(Long userId, String message, String imageUrl) {
         log.info("User ID: {} sending message: {}", userId, message);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        
         boolean isFirstMessage = chatMessageRepository.findByUserIdOrderByCreatedAtAsc(userId).isEmpty();
 
-        
+        String body = (message != null && !message.isBlank()) ? message : "[Hình ảnh]";
         ChatMessage customerMsg = ChatMessage.builder()
                 .user(user)
                 .sender("CUSTOMER")
-                .message(message)
+                .message(body)
+                .imageUrl(imageUrl)
                 .isAutoReply(false)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -119,7 +121,7 @@ public class ChatService {
                 .filter(t -> t != null && !t.isBlank())
                 .toList();
         if (!adminTokens.isEmpty()) {
-            fcmService.sendToTokens(adminTokens, "Tin nhắn mới từ " + user.getUsername(), message);
+            fcmService.sendToTokens(adminTokens, "Tin nhắn mới từ " + user.getUsername(), body);
         }
 
         boolean hasAdminReplied = chatMessageRepository.existsByUserIdAndSenderAndIsAutoReply(userId, "STORE", false);

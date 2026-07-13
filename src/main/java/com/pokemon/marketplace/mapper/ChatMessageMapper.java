@@ -14,6 +14,7 @@ public class ChatMessageMapper {
                 .userId(c.getUser().getId())
                 .sender(c.getSender())
                 .message(c.getMessage())
+                .imageUrl(c.getImageUrl())
                 .createdAt(c.getCreatedAt())
                 .isAutoReply(c.isAutoReply())
                 .build();

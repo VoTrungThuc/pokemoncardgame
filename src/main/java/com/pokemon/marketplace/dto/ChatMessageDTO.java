@@ -15,6 +15,7 @@ public class ChatMessageDTO {
     private Long userId;
     private String sender;
     private String message;
+    private String imageUrl;
     private boolean isAutoReply;
     private LocalDateTime createdAt;
 }

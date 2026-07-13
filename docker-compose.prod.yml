@@ -12,8 +12,11 @@ services:
       - "127.0.0.1:8080:8080"
     # Cap JVM heap so it can't OOM the 1 GB instance
     mem_limit: 700m
+    volumes:
+      - /home/ubuntu/pokemon/uploads:/app/uploads
     environment:
       - JAVA_TOOL_OPTIONS=-Xmx448m -Xss512k
+      - UPLOAD_BASE_URL=http://129.80.105.58
       - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-36000000}
