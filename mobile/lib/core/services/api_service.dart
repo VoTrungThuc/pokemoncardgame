@@ -268,7 +268,7 @@ class ApiService {
   // Register Firebase Cloud Messaging token so the backend can push notifications
   static Future<void> registerFcmToken(String token) async {
     try {
-      await post('/api/fcm/token?token=$token');
+      await post('/api/fcm/token?token=$token', {});
     } catch (_) {
       // non-fatal: push simply won't work until next login
     }
