@@ -194,8 +194,6 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-          ),
-        ),
       ),
     );
   }
