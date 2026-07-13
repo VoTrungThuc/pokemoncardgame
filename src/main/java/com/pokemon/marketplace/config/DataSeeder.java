@@ -120,6 +120,21 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Seeded users: ash_ketchum, gary_oak, admin, user_test, admin_test, user, admin_new, admin_custom");
         }
 
+        // Seed a pre-funded demo account (created once, balance not overwritten on restart)
+        if (userRepository.findByUsername("rich_user").isEmpty()) {
+            User richUser = User.builder()
+                    .username("rich_user")
+                    .email("rich@pokecardstore.com")
+                    .password(passwordEncoder.encode("rich123"))
+                    .phone("0900001111")
+                    .shippingAddress("TP.HCM, Việt Nam")
+                    .role(UserRole.USER)
+                    .balance(100000.0)
+                    .build();
+            userRepository.save(richUser);
+            log.info("Seeded demo account rich_user (password: rich123) with balance 100000");
+        }
+
         // Seed products
         Object[][] cardData = {
             // --- ORIGINAL SEEDED PRODUCTS ---
