@@ -102,3 +102,5 @@ jobs:
               sleep 5
             done
             curl -s -m 5 -o /dev/null -w "health HTTP %{http_code}\n" http://127.0.0.1:8080/actuator/health || true
+
+# trigger redeploy with FCM secrets
