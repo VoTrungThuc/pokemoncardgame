@@ -4,14 +4,12 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +29,7 @@ public class FcmHttpClient {
 
     private final String projectId;
     private final GoogleCredentials credentials;
-    private final WebClient webClient;
+    private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FcmHttpClient() {
@@ -49,7 +47,6 @@ public class FcmHttpClient {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to parse FCM service account", e);
         }
-        this.webClient = WebClient.builder().build();
     }
 
     public void send(String token, String title, String body) {
@@ -78,18 +75,15 @@ public class FcmHttpClient {
             String json = objectMapper.writeValueAsString(payload);
             String url = String.format(FCM_SEND_URL, projectId);
 
-            webClient.post()
-                    .uri(url)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .body(BodyInserters.fromValue(json))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .onErrorResume(WebClientResponseException.class, ex -> {
-                        log.error("FCM send failed ({}): {}", ex.getStatusCode(), ex.getResponseBodyAsString());
-                        return Mono.empty();
-                    })
-                    .block();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> request = new HttpEntity<>(json, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.error("FCM send failed: {} -> {}", response.getStatusCode(), response.getBody());
+            }
         } catch (Exception e) {
             log.error("Failed to send FCM message: {}", e.getMessage());
         }
