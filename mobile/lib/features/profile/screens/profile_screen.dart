@@ -1,6 +1,7 @@
 import 'package:mobile/shared/widgets/notification_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/constants/app_routes.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
@@ -290,7 +291,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   message: 'Bạn có chắc chắn muốn thoát tài khoản Trainer hiện tại không?',
                   type: NotificationType.warning,
                   confirmLabel: 'Đăng xuất',
-                  onConfirm: () => auth.logout(),
+                  onConfirm: () async {
+                    await auth.logout();
+                    if (mounted) {
+                      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
+                    }
+                  },
                   cancelLabel: 'Hủy bỏ',
                 );
               },

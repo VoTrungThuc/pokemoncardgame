@@ -12,8 +12,8 @@ import 'package:mobile/features/auth/models/user.dart';
 import 'package:mobile/features/product/models/comment.dart';
 
 class ApiService {
-  static const String _baseUrlAndroid = 'http://10.0.2.2:8080';
-  static const String _baseUrlIos = 'http://localhost:8080';
+  static const String _baseUrlAndroid = 'http://129.80.105.58';
+  static const String _baseUrlIos = 'http://129.80.105.58';
   
   // Default to emulator IP, in production this would be the Railway URL
   static String get baseUrl {
@@ -23,7 +23,7 @@ class ApiService {
     if (defaultTargetPlatform == TargetPlatform.android) {
       return _baseUrlAndroid;
     }
-    return 'http://localhost:8080';
+    return _baseUrlIos;
   }
 
   static Function()? onAuthFailedCallback;

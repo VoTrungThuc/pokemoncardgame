@@ -4,6 +4,7 @@ import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/constants/app_routes.dart';
 import 'package:mobile/core/constants/app_strings.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
+import 'package:mobile/shared/widgets/notification_popup.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,8 +40,13 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
       }
     } catch (e) {
+      String friendlyMessage = e.toString().replaceFirst('Exception: ', '');
+      if (friendlyMessage.toLowerCase().contains('bad credentials') || 
+          friendlyMessage.toLowerCase().contains('user not found')) {
+        friendlyMessage = 'Tên đăng nhập hoặc mật khẩu không chính xác!';
+      }
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = friendlyMessage;
       });
     }
   }
@@ -225,27 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 24),
 
-                            // Error Message
-                            if (_errorMessage != null) ...[
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF2F2),
-                                  border: Border.all(color: const Color(0xFFFCA5A5)),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: AppColors.error,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
+
 
                             // Username Field
                             const Text(
@@ -335,7 +321,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 28),
+                            if (_errorMessage != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                            const SizedBox(height: 24),
 
                             // Submit Button
                             ElevatedButton(

@@ -1,37 +1,20 @@
-# Production compose for Oracle Cloud (backend + MongoDB only)
-# MongoDB is NOT exposed publicly. Backend binds to localhost only;
-# native Nginx on the host reverse-proxies /api -> 127.0.0.1:8080
+# Production compose for Oracle Cloud (backend only)
+# Image is built on GitHub Actions and pushed to GHCR. The server only PULLS
+# it (no heavy Maven build on the small instance).
+# MongoDB runs on a SEPARATE instance (129.80.234.30) with auth + firewall.
+# Backend binds to localhost only; native Nginx reverse-proxies /api -> 8080.
 services:
-  mongo-db:
-    image: mongo:7
-    container_name: pokemon_mongo
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_DATABASE: pokemon_db
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    # No ports mapping -> not reachable from the internet
-
   backend:
-    # Has both `build` and `image`: builds locally with this tag, and CI can
-    # also push the same tag to GHCR and `docker compose pull` it.
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ghcr.io/repoowner/pokemon-be:latest
+    image: ghcr.io/tranhoangtrunghieu/pokemon-be:latest
     container_name: pokemon_backend
     restart: unless-stopped
-    # Bind to localhost only; Nginx (host) proxies to it
     ports:
       - "127.0.0.1:8080:8080"
+    # Cap JVM heap so it can't OOM the 1 GB instance
+    mem_limit: 700m
     environment:
-      - MONGO_URI=mongodb://mongo-db:27017/pokemon_db
+      - JAVA_TOOL_OPTIONS=-Xmx448m -Xss512k
+      - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-36000000}
       - VNP_TMN_CODE=${VNP_TMN_CODE}
@@ -40,16 +23,9 @@ services:
       - VNP_RETURN_URL=${VNP_RETURN_URL}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
-    depends_on:
-      mongo-db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 60s
-
-volumes:
-  mongo_data:
-    driver: local
+      start_period: 90s
