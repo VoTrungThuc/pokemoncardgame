@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/features/cart/providers/cart_provider.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -173,12 +174,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ],
                       ),
                       padding: const EdgeInsets.all(14),
-                      child: Image.network(
-                        'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(paymentUrl)}',
+                      child: RetryNetworkImage(
+                        url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(paymentUrl)}',
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.grey),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 22),

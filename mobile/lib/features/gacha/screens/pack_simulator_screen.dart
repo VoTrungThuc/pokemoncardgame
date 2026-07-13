@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 
 class BoosterPack {
@@ -698,10 +699,9 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.network(
-                                  resolvedImg,
+                                child: RetryNetworkImage(
+                                  url: resolvedImg,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 64, color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -1086,17 +1086,11 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                ApiService.resolveImageUrl(pack.imageUrl),
+              child: RetryNetworkImage(
+                url: ApiService.resolveImageUrl(pack.imageUrl),
                 width: 70,
                 height: 100,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 70,
-                  height: 100,
-                  color: Colors.white.withOpacity(0.15),
-                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 28),
-                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -1358,10 +1352,9 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
                           child: Column(
                             children: [
                               Expanded(
-                                child: Image.network(
-                                  resolvedImg,
+                                child: RetryNetworkImage(
+                                  url: resolvedImg,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 24, color: Colors.grey),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -1843,10 +1836,9 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                resolvedImg,
+              child: RetryNetworkImage(
+                url: resolvedImg,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 48, color: Colors.grey),
               ),
             ),
           ),
@@ -1931,8 +1923,8 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
                 child: Column(
                   children: [
                     Expanded(
-                      child: Image.network(
-                        resolvedImg,
+                      child: RetryNetworkImage(
+                        url: resolvedImg,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -2858,12 +2850,9 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
                           ],
                         ),
                         padding: const EdgeInsets.all(14),
-                        child: Image.network(
-                          'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(paymentUrl)}',
+                        child: RetryNetworkImage(
+                          url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(paymentUrl)}',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Center(
-                            child: Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.grey),
-                          ),
                         ),
                       ),
                       const SizedBox(height: 22),

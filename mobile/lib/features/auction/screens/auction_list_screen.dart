@@ -4,6 +4,7 @@ import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/auction/models/auction.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class AuctionListScreen extends StatefulWidget {
   const AuctionListScreen({super.key});
@@ -53,7 +54,7 @@ class _AuctionListScreenState extends State<AuctionListScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(6),
-              child: Image.network(resolvedImg, fit: BoxFit.contain),
+              child: RetryNetworkImage(url: resolvedImg, fit: BoxFit.contain),
             ),
             const SizedBox(width: 16),
             Expanded(

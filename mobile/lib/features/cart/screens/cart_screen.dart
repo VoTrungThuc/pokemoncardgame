@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile/features/cart/providers/cart_provider.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 import 'package:mobile/features/dashboard/screens/dashboard_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -200,7 +201,7 @@ class _CartScreenState extends State<CartScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     padding: const EdgeInsets.all(4),
-                                    child: Image.network(resolvedImg, fit: BoxFit.contain),
+                                    child: RetryNetworkImage(url: resolvedImg, fit: BoxFit.contain),
                                   ),
                                   const SizedBox(width: 14),
 

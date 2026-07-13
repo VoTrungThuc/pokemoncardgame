@@ -6,6 +6,7 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 import 'package:mobile/features/product/models/comment.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -1267,7 +1268,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   height: 300,
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
-                  child: Image.network(resolvedImg, fit: BoxFit.contain),
+                  child: RetryNetworkImage(url: resolvedImg, fit: BoxFit.contain),
                 ),
 
                 // Specs Details container

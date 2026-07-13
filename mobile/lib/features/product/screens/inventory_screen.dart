@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -550,7 +551,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   padding: const EdgeInsets.all(4),
-                                  child: Image.network(resolvedImg, fit: BoxFit.contain),
+                                  child: RetryNetworkImage(url: resolvedImg, fit: BoxFit.contain),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(

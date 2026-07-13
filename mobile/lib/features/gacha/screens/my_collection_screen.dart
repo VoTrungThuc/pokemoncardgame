@@ -6,6 +6,7 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class MyCollectionScreen extends StatefulWidget {
   const MyCollectionScreen({super.key});
@@ -243,7 +244,7 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
                             Expanded(
                               child: Stack(
                                 children: [
-                                  Center(child: Image.network(resolvedImg, fit: BoxFit.contain)),
+                                  Center(child: RetryNetworkImage(url: resolvedImg, fit: BoxFit.contain)),
                                   if (quantity > 1)
                                     Positioned(
                                       top: 2,
@@ -363,8 +364,8 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              ApiService.resolveImageUrl(card.imageUrl),
+                            child: RetryNetworkImage(
+                              url: ApiService.resolveImageUrl(card.imageUrl),
                               width: 65,
                               height: 90,
                               fit: BoxFit.contain,

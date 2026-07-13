@@ -4,6 +4,7 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -765,13 +766,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     padding: const EdgeInsets.all(8),
                                     width: double.infinity,
-                                    child: Image.network(
-                                      resolvedImg,
+                                    child: RetryNetworkImage(
+                                      url: resolvedImg,
                                       fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) => const Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: Colors.grey,
-                                      ),
                                     ),
                                   ),
                                 ),

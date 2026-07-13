@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 
 class CreateAuctionScreen extends StatefulWidget {
   const CreateAuctionScreen({super.key});
@@ -152,7 +153,7 @@ class _CreateAuctionScreenState extends State<CreateAuctionScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     padding: const EdgeInsets.all(4),
-                                    child: Image.network(resolvedImg, fit: BoxFit.contain),
+                                    child: RetryNetworkImage(url: resolvedImg, fit: BoxFit.contain),
                                   ),
                                   title: Text(
                                     p.name,
@@ -379,7 +380,7 @@ class _CreateAuctionScreenState extends State<CreateAuctionScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               padding: const EdgeInsets.all(4),
-                              child: Image.network(resolvedSelectedImg, fit: BoxFit.contain),
+                              child: RetryNetworkImage(url: resolvedSelectedImg, fit: BoxFit.contain),
                             ),
                             const SizedBox(width: 16),
                             Expanded(

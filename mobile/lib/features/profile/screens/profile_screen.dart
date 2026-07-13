@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/services/api_service.dart';
+import 'package:mobile/core/widgets/retry_network_image.dart';
 import 'package:mobile/features/order/models/order.dart';
 import 'package:mobile/features/auth/models/user.dart';
 import 'dart:math';
@@ -487,10 +488,9 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
                         ),
                       ),
                       child: ClipOval(
-                        child: Image.network(
-                          url,
+                        child: RetryNetworkImage(
+                          url: url,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.person_rounded),
                         ),
                       ),
                     ),
@@ -744,12 +744,9 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
                           ],
                         ),
                         padding: const EdgeInsets.all(14),
-                        child: Image.network(
-                          'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(paymentUrl)}',
+                        child: RetryNetworkImage(
+                          url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${Uri.encodeComponent(paymentUrl)}',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Center(
-                            child: Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.grey),
-                          ),
                         ),
                       ),
                       const SizedBox(height: 22),
