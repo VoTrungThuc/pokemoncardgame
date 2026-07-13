@@ -283,7 +283,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Ngày đặt: ${order.createdAt.replaceFirst('T', ' ').substring(0, 16)}',
+              'Ngày đặt: ${(order.createdAt != null && order.createdAt.length >= 16) ? order.createdAt.replaceFirst('T', ' ').substring(0, 16) : (order.createdAt ?? '')}',
               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
             ),
             const Divider(height: 20),

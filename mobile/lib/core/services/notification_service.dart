@@ -25,6 +25,8 @@ class NotificationService {
   }) async {
     await Firebase.initializeApp();
 
+    FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+
     await _local
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()

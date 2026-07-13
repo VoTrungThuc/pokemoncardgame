@@ -18,7 +18,9 @@ class OrderItem {
       id: json['id'] != null 
           ? (json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0) 
           : 0,
-      product: Product.fromJson(json['product']),
+      product: json['product'] != null
+          ? Product.fromJson(json['product'])
+          : Product(id: 0, name: 'Unknown', brand: '', price: 0.0, stock: 0, isAvailable: false, score: 0.0),
       quantity: json['quantity'] != null 
           ? (json['quantity'] is int ? json['quantity'] : int.tryParse(json['quantity'].toString()) ?? 0) 
           : 0,
