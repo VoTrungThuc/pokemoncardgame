@@ -86,8 +86,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       } else if (_selectedPaymentMethod == 'VNPAY') {
         final paymentUrl = await ApiService.createPaymentUrl(createdOrder.id);
-        await cart.clearCart();
-        
         if (mounted) {
           _showVNPayDialog(createdOrder.id, paymentUrl);
         }
@@ -234,7 +232,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     TextButton(
                       onPressed: () {
                         Navigator.pop(ctx); // Close VNPay dialog
-                        
+                        Provider.of<CartProvider>(context, listen: false).clearCart();
+
                         // Show success payment popup
                         showNotificationPopup(
                           context: context,
