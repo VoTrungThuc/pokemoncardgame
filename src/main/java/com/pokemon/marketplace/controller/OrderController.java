@@ -7,6 +7,7 @@ import com.pokemon.marketplace.dto.OrderDTO;
 import com.pokemon.marketplace.dto.OrderShippingUpdateRequest;
 import com.pokemon.marketplace.entity.User;
 import com.pokemon.marketplace.entity.enums.OrderStatus;
+import com.pokemon.marketplace.entity.enums.UserRole;
 import com.pokemon.marketplace.repository.UserRepository;
 import com.pokemon.marketplace.service.OrderService;
 import jakarta.validation.Valid;
