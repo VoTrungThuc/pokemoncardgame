@@ -456,6 +456,38 @@ class ApiService {
     }
   }
 
+  static Future<Order> getOrderById(int id) async {
+    final response = await get('/api/orders/$id');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return Order.fromJson(data['data']);
+      }
+    }
+    throw Exception('Failed to fetch order detail');
+  }
+
+  static Future<Order> updateOrderShipping(int id, {
+    required String recipientName,
+    required String phone,
+    required String shippingAddress,
+  }) async {
+    final body = {
+      'recipientName': recipientName,
+      'phone': phone,
+      'shippingAddress': shippingAddress,
+    };
+    final response = await put('/api/orders/$id/shipping', body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return Order.fromJson(data['data']);
+      }
+      throw Exception(data['message'] ?? 'Failed to update shipping');
+    }
+    throw Exception('Failed to update shipping');
+  }
+
   static Future<String> createPaymentUrl(int orderId) async {
     final response = await get('/api/payment/create-payment?orderId=$orderId');
     final data = jsonDecode(response.body);

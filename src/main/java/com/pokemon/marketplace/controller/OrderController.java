@@ -4,6 +4,7 @@ import com.pokemon.marketplace.dto.ApiResponse;
 import com.pokemon.marketplace.dto.GachaRedeemRequest;
 import com.pokemon.marketplace.dto.OrderCreateRequest;
 import com.pokemon.marketplace.dto.OrderDTO;
+import com.pokemon.marketplace.dto.OrderShippingUpdateRequest;
 import com.pokemon.marketplace.entity.User;
 import com.pokemon.marketplace.entity.enums.OrderStatus;
 import com.pokemon.marketplace.repository.UserRepository;
@@ -64,9 +65,26 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderDTO>> getOrderById(@PathVariable Long id) {
-        log.info("REST request to get order by ID: {}", id);
+        Long userId = getAuthenticatedUserId();
+        User caller = userRepository.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         OrderDTO order = orderService.getOrderById(id);
+        if (caller.getRole() != UserRole.ADMIN
+                && (order.getUserId() == null || !order.getUserId().equals(userId))) {
+            throw new IllegalArgumentException("Bạn không có quyền xem đơn hàng này.");
+        }
         return ResponseEntity.ok(ApiResponse.success(order, "Fetched order successfully"));
+    }
+
+    @PutMapping("/{id}/shipping")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<OrderDTO>> updateOrderShipping(
+            @PathVariable Long id,
+            @Valid @RequestBody OrderShippingUpdateRequest request) {
+        Long userId = getAuthenticatedUserId();
+        log.info("REST request by User ID: {} to update shipping for order ID: {}", userId, id);
+        OrderDTO updated = orderService.updateOrderShipping(id, userId, request);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Cập nhật thông tin giao nhận thành công"));
     }
 
     @PutMapping("/{id}/cancel")

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/features/order/models/order.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
+import 'package:mobile/features/order/screens/order_detail_screen.dart';
 import 'package:mobile/shared/widgets/notification_popup.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
@@ -202,7 +203,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final isGacha = order.paymentMethod != null && order.paymentMethod!.toUpperCase() == 'GACHA';
     final isAuction = order.paymentMethod != null && order.paymentMethod!.toUpperCase() == 'AUCTION';
 
-    return Card(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OrderDetailScreen(
+              orderId: order.id!,
+              isAdmin: isAdmin,
+            ),
+          ),
+        );
+      },
+      child: Card(
       color: Colors.white,
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
@@ -419,6 +432,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

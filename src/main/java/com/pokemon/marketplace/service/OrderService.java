@@ -3,6 +3,7 @@ package com.pokemon.marketplace.service;
 import com.pokemon.marketplace.dto.GachaRedeemRequest;
 import com.pokemon.marketplace.dto.OrderCreateRequest;
 import com.pokemon.marketplace.dto.OrderDTO;
+import com.pokemon.marketplace.dto.OrderShippingUpdateRequest;
 import com.pokemon.marketplace.entity.*;
 import com.pokemon.marketplace.entity.enums.OrderStatus;
 import com.pokemon.marketplace.entity.enums.UserRole;
@@ -296,6 +297,63 @@ public class OrderService {
                 .createdAt(LocalDateTime.now())
                 .build();
         notificationRepository.save(statusNotification);
+
+        return orderMapper.toDTO(saved);
+    }
+
+    @Transactional
+    public OrderDTO updateOrderShipping(Long orderId, Long userId, OrderShippingUpdateRequest request) {
+        log.info("User ID: {} updating shipping info for order ID: {}", userId, orderId);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Bạn không có quyền chỉnh sửa đơn hàng này.");
+        }
+
+        if (order.getStatus() == OrderStatus.SHIPPED
+                || order.getStatus() == OrderStatus.COMPLETED
+                || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Đơn hàng đã được giao hoặc đã kết thúc nên không thể thay đổi thông tin giao nhận.");
+        }
+
+        String recipientName = request.getRecipientName();
+        String phone = request.getPhone();
+        String shippingAddress = request.getShippingAddress();
+
+        if (recipientName == null || recipientName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ tên người nhận là bắt buộc.");
+        }
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new IllegalArgumentException("Số điện thoại liên hệ là bắt buộc.");
+        }
+        if (!phone.trim().matches("^\\d{9,11}$")) {
+            throw new IllegalArgumentException("Số điện thoại không hợp lệ (yêu cầu từ 9 đến 11 chữ số).");
+        }
+        if (shippingAddress == null || shippingAddress.trim().isEmpty()) {
+            throw new IllegalArgumentException("Địa chỉ nhận hàng là bắt buộc.");
+        }
+
+        order.setRecipientName(recipientName.trim());
+        order.setPhone(phone.trim());
+        order.setShippingAddress(shippingAddress.trim());
+        Order saved = orderRepository.save(order);
+
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
+        String adminTitle = "📦 Đơn hàng #" + order.getId() + " đổi thông tin giao nhận";
+        String adminContent = "Người dùng @" + order.getUser().getUsername()
+                + " đã cập nhật thông tin giao nhận cho đơn #" + order.getId() + " (chưa giao hàng):\n"
+                + "👤 " + recipientName.trim() + "\n📞 " + phone.trim() + "\n📍 " + shippingAddress.trim();
+        for (User admin : admins) {
+            Notification adminNotification = Notification.builder()
+                    .user(admin)
+                    .title(adminTitle)
+                    .content(adminContent)
+                    .isRead(false)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(adminNotification);
+        }
 
         return orderMapper.toDTO(saved);
     }
