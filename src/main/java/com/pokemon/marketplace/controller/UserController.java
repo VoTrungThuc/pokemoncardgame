@@ -122,6 +122,7 @@ public class UserController {
         UserDTO responseDTO = UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .name(user.getName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .shippingAddress(user.getShippingAddress())
@@ -231,12 +232,16 @@ public class UserController {
         if (updateDTO.getAvatarUrl() != null) {
             user.setAvatarUrl(updateDTO.getAvatarUrl().trim());
         }
-        
+        if (updateDTO.getName() != null) {
+            user.setName(updateDTO.getName().trim());
+        }
+
         User savedUser = userRepository.save(user);
-        
+
         UserDTO responseDTO = UserDTO.builder()
                 .id(savedUser.getId())
                 .username(savedUser.getUsername())
+                .name(savedUser.getName())
                 .email(savedUser.getEmail())
                 .phone(savedUser.getPhone())
                 .shippingAddress(savedUser.getShippingAddress())

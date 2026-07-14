@@ -1,6 +1,7 @@
 class User {
   final int id;
   final String username;
+  final String? name;
   final String email;
   final String role;
   final String? phone;
@@ -11,6 +12,7 @@ class User {
   User({
     required this.id,
     required this.username,
+    this.name,
     required this.email,
     required this.role,
     this.phone,
@@ -23,6 +25,7 @@ class User {
     return User(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
       username: json['username'] ?? '',
+      name: json['name'],
       email: json['email'] ?? '',
       role: json['role'] ?? 'USER',
       phone: json['phone'],
@@ -36,6 +39,7 @@ class User {
     return {
       'id': id,
       'username': username,
+      'name': name,
       'email': email,
       'role': role,
       'phone': phone,

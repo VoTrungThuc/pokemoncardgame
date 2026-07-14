@@ -59,6 +59,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.user;
+    final nameValue = user?.name;
+    final displayName = (nameValue != null && nameValue.isNotEmpty)
+        ? nameValue
+        : (user?.username ?? 'Trainer');
     final username = user?.username ?? 'Trainer';
     final email = user?.email ?? '';
     final isAdmin = user?.role == 'ADMIN';
@@ -143,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                username,
+                                displayName,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900,
@@ -363,6 +367,7 @@ class _EditProfileSheetContent extends StatefulWidget {
 }
 
 class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _avatarController = TextEditingController();
@@ -383,6 +388,7 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
   void initState() {
     super.initState();
     final user = widget.auth.user;
+    _nameController.text = user?.name ?? user?.username ?? '';
     _phoneController.text = user?.phone ?? '';
     _addressController.text = user?.shippingAddress ?? '';
     _avatarController.text = user?.avatarUrl ?? '';
@@ -390,6 +396,7 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _avatarController.dispose();
@@ -446,6 +453,7 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
     setState(() => _isSubmitting = true);
     try {
       await widget.auth.updateProfile({
+        'name': _nameController.text.trim(),
         'phone': _phoneController.text.trim(),
         'shippingAddress': _addressController.text.trim(),
         'avatarUrl': _avatarController.text.trim(),
@@ -505,6 +513,21 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
                     icon: const Icon(Icons.close, color: Color(0xFF64748B)),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              // Display name input
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Tên hiển thị',
+                  labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  prefixIcon: const Icon(Icons.badge_rounded),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
               ),
               const SizedBox(height: 16),
               const Text(
