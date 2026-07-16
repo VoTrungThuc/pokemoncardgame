@@ -22,9 +22,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _addressController = TextEditingController();
   final _noteController = TextEditingController();
   
-  String _selectedPaymentMethod = 'COD'; // Default to Cash (COD)
+  String _selectedPaymentMethod = 'VNPAY'; // Default: online collection doesn't allow COD
   String _selectedDeliveryType = 'ONLINE_COLLECTION'; // Default to ONLINE_COLLECTION
   bool _isPlacing = false;
+
+  bool get _codDisabled => _selectedDeliveryType == 'ONLINE_COLLECTION';
 
   @override
   void initState() {
@@ -357,7 +359,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
-                              setState(() => _selectedDeliveryType = 'ONLINE_COLLECTION');
+                              setState(() {
+                                _selectedDeliveryType = 'ONLINE_COLLECTION';
+                                if (_selectedPaymentMethod == 'COD') {
+                                  _selectedPaymentMethod = 'VNPAY';
+                                }
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -541,47 +548,58 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     
                     Row(
                       children: [
-                        // Cash / COD
+                        // Cash / COD (disabled when storing online)
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() => _selectedPaymentMethod = 'COD');
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: _selectedPaymentMethod == 'COD'
-                                    ? const Color(0xFFFEF2F2)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
+                          child: Opacity(
+                            opacity: _codDisabled ? 0.45 : 1.0,
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_codDisabled) {
+                                  showStyledSnackBar(
+                                    context: context,
+                                    message: 'Hình thức "Lưu giữ online" không hỗ trợ thanh toán tiền mặt (COD).',
+                                    type: NotificationType.error,
+                                  );
+                                  return;
+                                }
+                                setState(() => _selectedPaymentMethod = 'COD');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+                                decoration: BoxDecoration(
                                   color: _selectedPaymentMethod == 'COD'
-                                      ? const Color(0xFFE53935)
-                                      : Colors.grey.shade200,
-                                  width: _selectedPaymentMethod == 'COD' ? 2 : 1,
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.local_atm_rounded,
+                                      ? const Color(0xFFFEF2F2)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
                                     color: _selectedPaymentMethod == 'COD'
                                         ? const Color(0xFFE53935)
-                                        : Colors.grey.shade400,
-                                    size: 32,
+                                        : Colors.grey.shade200,
+                                    width: _selectedPaymentMethod == 'COD' ? 2 : 1,
                                   ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Tiền mặt (COD)',
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF1E293B)),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Khi nhận hàng',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.local_atm_rounded,
+                                      color: _selectedPaymentMethod == 'COD'
+                                          ? const Color(0xFFE53935)
+                                          : Colors.grey.shade400,
+                                      size: 32,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Tiền mặt (COD)',
+                                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF1E293B)),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _codDisabled ? 'Không khả dụng' : 'Khi nhận hàng',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

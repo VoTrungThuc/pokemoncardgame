@@ -63,6 +63,13 @@ public class OrderService {
             throw new IllegalArgumentException("Hình thức nhận hàng không hợp lệ (deliveryType).");
         }
 
+        String paymentMethod = request.getPaymentMethod() != null
+                ? request.getPaymentMethod().trim().toUpperCase()
+                : "";
+        if ("ONLINE_COLLECTION".equals(deliveryType) && "COD".equals(paymentMethod)) {
+            throw new IllegalArgumentException("Hình thức lưu giữ online không hỗ trợ thanh toán tiền mặt (COD). Vui lòng chọn VNPay hoặc Số dư tài khoản.");
+        }
+
         if (request.getRecipientName() == null || request.getRecipientName().trim().isEmpty()) {
             throw new IllegalArgumentException("Họ tên người nhận là bắt buộc.");
         }

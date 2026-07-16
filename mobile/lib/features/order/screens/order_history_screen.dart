@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/features/order/models/order.dart';
+import 'package:mobile/features/gacha/services/collection_store.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/order/screens/order_detail_screen.dart';
@@ -54,23 +53,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.user?.role == 'ADMIN') return;
+      final userId = auth.user?.id;
+      if (userId == null) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final String? syncedJson = prefs.getString('synced_purchase_order_ids');
-      List<int> syncedOrderIds = [];
-      if (syncedJson != null) {
-        try {
-          syncedOrderIds = List<int>.from(jsonDecode(syncedJson));
-        } catch (_) {}
-      }
-
-      final String? collectionJson = prefs.getString('owned_card_ids');
-      List<int> ownedIds = [];
-      if (collectionJson != null) {
-        try {
-          ownedIds = List<int>.from(jsonDecode(collectionJson));
-        } catch (_) {}
-      }
+      List<int> syncedOrderIds = await CollectionStore.getSyncedOrderIds(userId);
+      List<int> ownedIds = await CollectionStore.getOwnedCardIds(userId);
 
       bool collectionChanged = false;
       bool syncedOrdersChanged = false;
@@ -80,7 +67,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         final String status = order.status.toUpperCase();
         final String deliveryType = (order.deliveryType ?? 'ONLINE_COLLECTION').toUpperCase();
 
-        if (status == 'COMPLETED' && paymentMethod != 'GACHA' && deliveryType == 'ONLINE_COLLECTION') {
+        // Online collection cards go into the collection as soon as the order
+        // is placed (any non-cancelled status), no need to wait for COMPLETED.
+        if (status != 'CANCELLED' && paymentMethod != 'GACHA' && deliveryType == 'ONLINE_COLLECTION') {
           if (!syncedOrderIds.contains(order.id)) {
             for (final item in order.orderItems) {
               if (item.product.isCard) {
@@ -97,10 +86,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       }
 
       if (collectionChanged) {
-        await prefs.setString('owned_card_ids', jsonEncode(ownedIds));
+        await CollectionStore.setOwnedCardIds(userId, ownedIds);
       }
       if (syncedOrdersChanged) {
-        await prefs.setString('synced_purchase_order_ids', jsonEncode(syncedOrderIds));
+        await CollectionStore.setSyncedOrderIds(userId, syncedOrderIds);
       }
     } catch (e) {
       print('Error syncing purchased cards: $e');
@@ -111,15 +100,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.user?.role == 'ADMIN') return;
+      final userId = auth.user?.id;
+      if (userId == null) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final String? refundedJson = prefs.getString('refunded_order_ids');
-      List<int> refundedIds = [];
-      if (refundedJson != null) {
-        try {
-          refundedIds = List<int>.from(jsonDecode(refundedJson));
-        } catch (_) {}
-      }
+      List<int> refundedIds = await CollectionStore.getRefundedOrderIds(userId);
 
       bool changed = false;
       List<String> refundedCardNames = [];
@@ -129,13 +113,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             order.paymentMethod!.toUpperCase() == 'GACHA' && 
             order.status.toUpperCase() == 'CANCELLED') {
           if (!refundedIds.contains(order.id)) {
-            final String? collectionJson = prefs.getString('owned_card_ids');
-            List<int> ownedIds = [];
-            if (collectionJson != null) {
-              try {
-                ownedIds = List<int>.from(jsonDecode(collectionJson));
-              } catch (_) {}
-            }
+            List<int> ownedIds = await CollectionStore.getOwnedCardIds(userId);
             
             for (final item in order.orderItems) {
               for (int i = 0; i < item.quantity; i++) {
@@ -144,7 +122,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               refundedCardNames.add('${item.product.name} (x${item.quantity})');
             }
 
-            await prefs.setString('owned_card_ids', jsonEncode(ownedIds));
+            await CollectionStore.setOwnedCardIds(userId, ownedIds);
             refundedIds.add(order.id);
             changed = true;
           }
@@ -152,7 +130,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       }
 
       if (changed) {
-        await prefs.setString('refunded_order_ids', jsonEncode(refundedIds));
+        await CollectionStore.setRefundedOrderIds(userId, refundedIds);
         if (mounted) {
           showDialog(
             context: context,

@@ -209,7 +209,7 @@ class ApiService {
       Uri.parse('$baseUrl/api/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'password': password}),
-    );
+    ).timeout(const Duration(seconds: 15));
 
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 && data['success'] == true) {
@@ -306,7 +306,7 @@ class ApiService {
   static Future<String?> getFcmToken() async {
     try {
       final messaging = FirebaseMessaging.instance;
-      return await messaging.getToken();
+      return await messaging.getToken().timeout(const Duration(seconds: 5));
     } catch (_) {
       return null;
     }

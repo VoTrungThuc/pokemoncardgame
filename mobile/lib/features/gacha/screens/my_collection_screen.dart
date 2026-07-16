@@ -1,12 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/core/widgets/retry_network_image.dart';
+import 'package:mobile/features/gacha/services/collection_store.dart';
 
 class MyCollectionScreen extends StatefulWidget {
   const MyCollectionScreen({super.key});
@@ -31,19 +30,20 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
 
   Future<void> _loadCollection() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? collectionJson = prefs.getString('owned_card_ids');
-      if (collectionJson != null) {
-        final List<dynamic> decoded = jsonDecode(collectionJson);
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final userId = auth.user?.id;
+      if (userId == null) {
         setState(() {
-          _ownedCardIds = List<int>.from(decoded);
+          _ownedCardIds = [];
           _isLoadingCollection = false;
         });
-      } else {
-        setState(() {
-          _isLoadingCollection = false;
-        });
+        return;
       }
+      final ids = await CollectionStore.getOwnedCardIds(userId);
+      setState(() {
+        _ownedCardIds = ids;
+        _isLoadingCollection = false;
+      });
     } catch (e) {
       print('Error loading collection: $e');
       setState(() {
@@ -56,25 +56,13 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.user?.role == 'ADMIN') return;
+      final userId = auth.user?.id;
+      if (userId == null) return;
 
       final orders = await ApiService.getOrders();
-      final prefs = await SharedPreferences.getInstance();
 
-      final String? syncedJson = prefs.getString('synced_purchase_order_ids');
-      List<int> syncedOrderIds = [];
-      if (syncedJson != null) {
-        try {
-          syncedOrderIds = List<int>.from(jsonDecode(syncedJson));
-        } catch (_) {}
-      }
-
-      final String? collectionJson = prefs.getString('owned_card_ids');
-      List<int> ownedIds = [];
-      if (collectionJson != null) {
-        try {
-          ownedIds = List<int>.from(jsonDecode(collectionJson));
-        } catch (_) {}
-      }
+      List<int> syncedOrderIds = await CollectionStore.getSyncedOrderIds(userId);
+      List<int> ownedIds = await CollectionStore.getOwnedCardIds(userId);
 
       bool collectionChanged = false;
       bool syncedOrdersChanged = false;
@@ -83,7 +71,9 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
         final String status = order.status.toUpperCase();
         final String deliveryType = (order.deliveryType ?? 'ONLINE_COLLECTION').toUpperCase();
 
-        if (status == 'COMPLETED' && paymentMethod != 'GACHA' && deliveryType == 'ONLINE_COLLECTION') {
+        // Online collection cards go into the collection as soon as the order
+        // is placed (any non-cancelled status), no need to wait for COMPLETED.
+        if (status != 'CANCELLED' && paymentMethod != 'GACHA' && deliveryType == 'ONLINE_COLLECTION') {
           if (!syncedOrderIds.contains(order.id)) {
             for (final item in order.orderItems) {
               if (item.product.isCard) {
@@ -100,13 +90,13 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
       }
 
       if (collectionChanged) {
-        await prefs.setString('owned_card_ids', jsonEncode(ownedIds));
+        await CollectionStore.setOwnedCardIds(userId, ownedIds);
         if (mounted) {
           _loadCollection();
         }
       }
       if (syncedOrdersChanged) {
-        await prefs.setString('synced_purchase_order_ids', jsonEncode(syncedOrderIds));
+        await CollectionStore.setSyncedOrderIds(userId, syncedOrderIds);
       }
     } catch (e) {
       print('Error syncing purchased cards: $e');
@@ -118,17 +108,12 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.user?.role == 'ADMIN') return;
+      final userId = auth.user?.id;
+      if (userId == null) return;
 
       final orders = await ApiService.getOrders();
-      final prefs = await SharedPreferences.getInstance();
-      
-      final String? refundedJson = prefs.getString('refunded_order_ids');
-      List<int> refundedIds = [];
-      if (refundedJson != null) {
-        try {
-          refundedIds = List<int>.from(jsonDecode(refundedJson));
-        } catch (_) {}
-      }
+
+      List<int> refundedIds = await CollectionStore.getRefundedOrderIds(userId);
 
       bool changed = false;
       List<String> refundedCardNames = [];
@@ -138,13 +123,7 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
             order.paymentMethod!.toUpperCase() == 'GACHA' && 
             order.status.toUpperCase() == 'CANCELLED') {
           if (!refundedIds.contains(order.id)) {
-            final String? collectionJson = prefs.getString('owned_card_ids');
-            List<int> ownedIds = [];
-            if (collectionJson != null) {
-              try {
-                ownedIds = List<int>.from(jsonDecode(collectionJson));
-              } catch (_) {}
-            }
+            List<int> ownedIds = await CollectionStore.getOwnedCardIds(userId);
             
             for (final item in order.orderItems) {
               for (int i = 0; i < item.quantity; i++) {
@@ -153,7 +132,7 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
               refundedCardNames.add('${item.product.name} (x${item.quantity})');
             }
 
-            await prefs.setString('owned_card_ids', jsonEncode(ownedIds));
+            await CollectionStore.setOwnedCardIds(userId, ownedIds);
             refundedIds.add(order.id);
             changed = true;
           }
@@ -161,7 +140,7 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
       }
 
       if (changed) {
-        await prefs.setString('refunded_order_ids', jsonEncode(refundedIds));
+        await CollectionStore.setRefundedOrderIds(userId, refundedIds);
         _loadCollection();
         
         if (mounted) {
@@ -626,11 +605,10 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
                                   };
                                   
                                   await ApiService.redeemGacha(redeemData);
-                                  
-                                  final prefs = await SharedPreferences.getInstance();
-                                  final String? collectionJson = prefs.getString('owned_card_ids');
-                                  if (collectionJson != null) {
-                                    List<int> ids = List<int>.from(jsonDecode(collectionJson));
+
+                                  final userId = auth.user?.id;
+                                  if (userId != null) {
+                                    List<int> ids = await CollectionStore.getOwnedCardIds(userId);
                                     int removed = 0;
                                     ids.removeWhere((id) {
                                       if (id == card.id && removed < selectedQty) {
@@ -639,7 +617,7 @@ class _MyCollectionScreenState extends State<MyCollectionScreen> {
                                       }
                                       return false;
                                     });
-                                    await prefs.setString('owned_card_ids', jsonEncode(ids));
+                                    await CollectionStore.setOwnedCardIds(userId, ids);
                                   }
                                   
                                   if (mounted) {

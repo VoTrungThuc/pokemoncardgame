@@ -9,6 +9,7 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/product/models/product.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/core/widgets/retry_network_image.dart';
+import 'package:mobile/features/gacha/services/collection_store.dart';
 
 
 class BoosterPack {
@@ -871,18 +872,12 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
   }
 
   Future<void> _addToLocalCollection(int cardId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? collectionJson = prefs.getString('owned_card_ids');
-    List<int> ownedIds = [];
-    if (collectionJson != null) {
-      try {
-        ownedIds = List<int>.from(jsonDecode(collectionJson));
-      } catch (e) {
-        print('Error reading local collection: $e');
-      }
-    }
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final userId = auth.user?.id;
+    if (userId == null) return;
+    List<int> ownedIds = await CollectionStore.getOwnedCardIds(userId);
     ownedIds.add(cardId);
-    await prefs.setString('owned_card_ids', jsonEncode(ownedIds));
+    await CollectionStore.setOwnedCardIds(userId, ownedIds);
   }
 
   Future<void> _collectCard(int index, Product prod) async {
@@ -927,16 +922,10 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
   }
 
   Future<void> _collectAllCards() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? collectionJson = prefs.getString('owned_card_ids');
-    List<int> ownedIds = [];
-    if (collectionJson != null) {
-      try {
-        ownedIds = List<int>.from(jsonDecode(collectionJson));
-      } catch (e) {
-        print('Error reading local collection: $e');
-      }
-    }
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final userId = auth.user?.id;
+    if (userId == null) return;
+    List<int> ownedIds = await CollectionStore.getOwnedCardIds(userId);
     
     int addedCount = 0;
     for (int i = 0; i < _pulledProducts.length; i++) {
@@ -948,7 +937,7 @@ class _PackSimulatorScreenState extends State<PackSimulatorScreen> with TickerPr
     }
     
     if (addedCount > 0) {
-      await prefs.setString('owned_card_ids', jsonEncode(ownedIds));
+      await CollectionStore.setOwnedCardIds(userId, ownedIds);
       setState(() {});
       if (mounted) {
         _showNotificationDialog(
