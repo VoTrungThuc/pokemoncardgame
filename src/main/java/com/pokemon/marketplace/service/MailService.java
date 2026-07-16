@@ -39,4 +39,30 @@ public class MailService {
         System.out.println("   MÃ OTP CỦA BẠN LÀ: " + otpCode);
         System.out.println("============================================================\n");
     }
+
+    public void sendPasswordResetEmail(String toEmail, String username, String otpCode) {
+        log.info("Attempting to send password reset OTP email to {} for user {}", toEmail, username);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject("Mã OTP đặt lại mật khẩu Pokémon Card Marketplace");
+            message.setText("Xin chào " + username + ",\n\n" +
+                    "Mã OTP để đặt lại mật khẩu của bạn là: " + otpCode + "\n" +
+                    "Mã này có hiệu lực trong vòng 5 phút.\n\n" +
+                    "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.\n\n" +
+                    "Trân trọng,\n" +
+                    "Pokémon Card Marketplace Team");
+            mailSender.send(message);
+            log.info("Password reset OTP email sent successfully to {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to {}. Error: {}", toEmail, e.getMessage());
+        }
+
+        System.out.println("\n============================================================");
+        System.out.println("   [FALLBACK PASSWORD RESET OTP LOG]");
+        System.out.println("   User: " + username);
+        System.out.println("   Email: " + toEmail);
+        System.out.println("   MÃ OTP ĐẶT LẠI MẬT KHẨU: " + otpCode);
+        System.out.println("============================================================\n");
+    }
 }

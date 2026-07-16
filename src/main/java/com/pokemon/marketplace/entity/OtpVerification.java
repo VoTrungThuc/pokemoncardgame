@@ -31,4 +31,6 @@ public class OtpVerification {
     private String otpCode;
 
     private LocalDateTime expiryTime;
+
+    private String purpose;
 }

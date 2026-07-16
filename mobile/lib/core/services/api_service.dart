@@ -248,6 +248,32 @@ class ApiService {
     throw Exception(data['message'] ?? 'Xác thực OTP thất bại');
   }
 
+  static Future<bool> forgotPassword(String email) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return true;
+    }
+    throw Exception(data['message'] ?? 'Không thể gửi mã OTP');
+  }
+
+  static Future<bool> resetPassword(String email, String otp, String newPassword) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'otp': otp, 'newPassword': newPassword}),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return true;
+    }
+    throw Exception(data['message'] ?? 'Đặt lại mật khẩu thất bại');
+  }
+
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     final refreshToken = prefs.getString('refreshToken');

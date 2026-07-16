@@ -112,6 +112,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  String _paymentLabel(String method) {
+    switch (method.toUpperCase()) {
+      case 'COD':
+        return 'Tiền mặt khi nhận hàng (COD)';
+      case 'VNPAY':
+        return 'Ví VNPay / QR';
+      case 'BALANCE':
+        return 'Số dư tài khoản trong app';
+      default:
+        return method;
+    }
+  }
+
+  String _deliveryLabel(String type) {
+    switch (type.toUpperCase()) {
+      case 'PHYSICAL_SHIPPING':
+        return 'Giao hàng vật lý (ship về địa chỉ)';
+      case 'ONLINE_COLLECTION':
+        return 'Lưu giữ online (giữ tại cửa hàng)';
+      default:
+        return type;
+    }
+  }
+
   Color _statusColor(String status) {
     switch (status) {
       case 'PENDING':
@@ -225,7 +249,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'Thanh toán: ${_order!.paymentMethod}',
+                                'Phương thức thanh toán: ${_paymentLabel(_order!.paymentMethod!)}',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                          if (_order!.deliveryType != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Hình thức giao nhận: ${_deliveryLabel(_order!.deliveryType!)}',
                                 style: const TextStyle(color: Colors.grey),
                               ),
                             ),

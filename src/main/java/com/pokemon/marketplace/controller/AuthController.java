@@ -69,6 +69,7 @@ public class AuthController {
                 .shippingAddress(request.getShippingAddress())
                 .otpCode(otp)
                 .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .purpose("REGISTER")
                 .build();
 
         otpVerificationRepository.save(verification);
@@ -187,5 +188,61 @@ public class AuthController {
                 .map(RefreshToken::getUser)
                 .ifPresent(user -> refreshTokenService.deleteByUserId(user.getId()));
         return ResponseEntity.ok(ApiResponse.success("Log out successful", "Logged out successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        log.info("REST request for password reset OTP for email: {}", email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này"));
+
+        String otp = String.format("%06d", new Random().nextInt(1000000));
+
+        otpVerificationRepository.findByEmailAndPurpose(email, "RESET").ifPresent(otpVerificationRepository::delete);
+
+        OtpVerification verification = OtpVerification.builder()
+                .username(user.getUsername())
+                .email(email)
+                .otpCode(otp)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .purpose("RESET")
+                .build();
+
+        otpVerificationRepository.save(verification);
+
+        mailService.sendPasswordResetEmail(email, user.getUsername(), otp);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "OTP sent", "Mã OTP đặt lại mật khẩu đã được gửi đến email của bạn."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        log.info("REST request to reset password for email: {}", email);
+
+        OtpVerification verification = otpVerificationRepository.findByEmailAndPurpose(email, "RESET")
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu đặt lại mật khẩu cho email này"));
+
+        if (!verification.getOtpCode().equals(request.getOtp())) {
+            throw new IllegalArgumentException("Mã OTP không chính xác");
+        }
+
+        if (verification.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Mã OTP đã hết hạn");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này"));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        otpVerificationRepository.delete(verification);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Password reset", "Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới."));
     }
 }

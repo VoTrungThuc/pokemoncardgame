@@ -9,6 +9,7 @@ import 'package:mobile/features/cart/providers/cart_provider.dart';
 import 'package:mobile/features/product/providers/market_provider.dart';
 import 'package:mobile/features/auth/screens/login_screen.dart';
 import 'package:mobile/features/auth/screens/register_screen.dart';
+import 'package:mobile/features/auth/screens/forgot_password_screen.dart';
 import 'package:mobile/features/dashboard/screens/dashboard_screen.dart';
 import 'package:mobile/features/product/screens/product_detail_screen.dart';
 import 'package:mobile/features/cart/screens/checkout_screen.dart';
@@ -75,6 +76,7 @@ class MyApp extends StatelessWidget {
             routes: {
               AppRoutes.login: (context) => const LoginScreen(),
               AppRoutes.register: (context) => const RegisterScreen(),
+              AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
               AppRoutes.dashboard: (context) => const DashboardScreen(),
               AppRoutes.checkout: (context) => const CheckoutScreen(),
               AppRoutes.packSimulator: (context) => const PackSimulatorScreen(),

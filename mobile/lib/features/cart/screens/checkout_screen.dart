@@ -78,9 +78,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ? 'Đơn hàng của bạn đã được thanh toán và đặt thành công bằng số dư tài khoản trong ứng dụng.'
                 : 'Đơn hàng của bạn đã được đặt thành công theo hình thức nhận hàng thanh toán (COD).',
             type: NotificationType.success,
-            confirmLabel: 'ĐỒNG Ý (OK)',
+            confirmLabel: 'XEM ĐƠN HÀNG',
             onConfirm: () {
-              Navigator.pop(context); // Exit checkout screen
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/dashboard',
+                (route) => false,
+                arguments: 2,
+              );
             },
           );
         }
@@ -240,9 +245,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           title: 'Thành công! 🎉',
                           message: 'Giao dịch thanh toán qua VNPay đã được ghi nhận. Đơn hàng của bạn đang được hệ thống xử lý!',
                           type: NotificationType.success,
-                          confirmLabel: 'Đồng ý (OK)',
+                          confirmLabel: 'XEM ĐƠN HÀNG',
                           onConfirm: () {
-                            Navigator.pop(context); // Exit checkout screen
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/dashboard',
+                              (route) => false,
+                              arguments: 2,
+                            );
                           },
                         );
                       },

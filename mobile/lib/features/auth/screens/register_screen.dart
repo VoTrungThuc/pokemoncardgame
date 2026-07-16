@@ -14,11 +14,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _otpController = TextEditingController();
   bool _showOtpStep = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isSubmitting = false;
   String? _errorMessage;
 
@@ -27,6 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _otpController.dispose();
@@ -303,6 +306,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 setState(() {
                                   _showOtpStep = false;
                                   _otpController.clear();
+                                  _confirmPasswordController.clear();
                                 });
                               },
                               child: const Text(
@@ -435,6 +439,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 }
                                 if (val.length < 6) {
                                   return 'Mật khẩu phải từ 6 ký tự trở lên';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Confirm Password
+                            const Text(
+                              'Nhập lại mật khẩu *',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: 'Nhập lại mật khẩu...',
+                                prefixIcon: const Icon(Icons.lock_reset_rounded, color: Color(0xFFEF4444)),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                              ),
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return 'Vui lòng nhập lại mật khẩu';
+                                }
+                                if (val != _passwordController.text) {
+                                  return 'Mật khẩu nhập lại không khớp';
                                 }
                                 return null;
                               },

@@ -321,6 +321,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                             ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text(
+                                  'Quên mật khẩu?',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                            ),
                             if (_errorMessage != null) ...[
                               const SizedBox(height: 12),
                               Text(
