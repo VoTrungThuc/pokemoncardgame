@@ -875,12 +875,10 @@ class _DepositSheetContentState extends State<_DepositSheetContent> {
   @override
   void initState() {
     super.initState();
-    final username = widget.auth.user?.username;
-    if (username == 'user') {
-      _selectedMethod = 'ADMIN';
-    } else {
-      _selectedMethod = 'VNPAY';
-    }
+    final role = widget.auth.user?.role;
+    // Only real ADMIN accounts get the direct-credit option.
+    // Regular users always top up via VNPay QR scan.
+    _selectedMethod = role == 'ADMIN' ? 'ADMIN' : 'VNPAY';
   }
 
   @override
