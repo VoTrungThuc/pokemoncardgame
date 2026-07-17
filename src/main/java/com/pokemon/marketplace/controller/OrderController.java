@@ -5,6 +5,7 @@ import com.pokemon.marketplace.dto.GachaRedeemRequest;
 import com.pokemon.marketplace.dto.OrderCreateRequest;
 import com.pokemon.marketplace.dto.OrderDTO;
 import com.pokemon.marketplace.dto.OrderShippingUpdateRequest;
+import com.pokemon.marketplace.dto.AdminCancelOrderRequest;
 import com.pokemon.marketplace.entity.User;
 import com.pokemon.marketplace.entity.enums.OrderStatus;
 import com.pokemon.marketplace.entity.enums.UserRole;
@@ -95,6 +96,17 @@ public class OrderController {
         log.info("REST request by User ID: {} to cancel order ID: {}", userId, id);
         OrderDTO cancelled = orderService.cancelOrder(id, userId);
         return ResponseEntity.ok(ApiResponse.success(cancelled, "Order cancelled successfully"));
+    }
+
+    @PutMapping("/{id}/admin-cancel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<OrderDTO>> adminCancelOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminCancelOrderRequest request) {
+        String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("REST request by Admin {} to cancel order ID: {}", adminUsername, id);
+        OrderDTO cancelled = orderService.adminCancelOrder(id, adminUsername, request.getReason());
+        return ResponseEntity.ok(ApiResponse.success(cancelled, "Đơn hàng đã được hủy bởi admin"));
     }
 
     @PostMapping("/gacha-redeem")

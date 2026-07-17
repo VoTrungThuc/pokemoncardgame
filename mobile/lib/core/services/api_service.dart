@@ -482,6 +482,23 @@ class ApiService {
     }
   }
 
+  static Future<void> adminCancelOrder(int id, String reason) async {
+    final response = await put('/api/orders/$id/admin-cancel', {'reason': reason});
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Không thể hủy đơn hàng');
+    }
+  }
+
+  static Future<void> changePassword(String oldPassword, String newPassword) async {
+    final response = await post('/api/users/change-password',
+        {'oldPassword': oldPassword, 'newPassword': newPassword});
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Đổi mật khẩu thất bại');
+    }
+  }
+
   static Future<Order> getOrderById(int id) async {
     final response = await get('/api/orders/$id');
     if (response.statusCode == 200) {

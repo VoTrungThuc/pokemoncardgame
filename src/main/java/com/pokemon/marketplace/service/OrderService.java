@@ -260,7 +260,12 @@ public class OrderService {
 
     @Transactional
     public OrderDTO cancelOrder(Long orderId, Long userId) {
-        log.info("User ID: {} cancelling order ID: {}", userId, orderId);
+        return cancelOrder(orderId, userId, null);
+    }
+
+    @Transactional
+    public OrderDTO cancelOrder(Long orderId, Long userId, String reason) {
+        log.info("User ID: {} cancelling order ID: {} with reason: {}", userId, orderId, reason);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
@@ -281,6 +286,10 @@ public class OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        if (reason != null && !reason.trim().isEmpty()) {
+            order.setCancelReason(reason.trim());
+            order.setCancelledBy(order.getUser().getUsername());
+        }
         if ("AUCTION".equalsIgnoreCase(order.getPaymentMethod()) || "BALANCE".equalsIgnoreCase(order.getPaymentMethod())) {
             User user = order.getUser();
             user.setBalance(user.getBalance() + order.getTotalAmount().doubleValue());
@@ -298,8 +307,65 @@ public class OrderService {
         
         Notification statusNotification = Notification.builder()
                 .user(order.getUser())
-                .title("Bạn đã hủy đơn hàng #" + order.getId() + " ❌")
-                .content("Đơn hàng thẻ bài Pokemon của bạn đã được hủy theo yêu cầu.")
+                .title("Đơn hàng #" + order.getId() + " đã được hủy ❌")
+                .content(reason != null && !reason.trim().isEmpty()
+                        ? "Đơn hàng của bạn đã bị hủy. Lý do: " + reason.trim()
+                        : "Đơn hàng thẻ bài Pokemon của bạn đã được hủy theo yêu cầu.")
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        notificationRepository.save(statusNotification);
+
+        return orderMapper.toDTO(saved);
+    }
+
+    @Transactional
+    public OrderDTO adminCancelOrder(Long orderId, String adminUsername, String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Admin phải nhập lý do hủy đơn hàng.");
+        }
+        log.info("Admin {} cancelling order ID: {} with reason: {}", adminUsername, orderId, reason);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("Không thể hủy đơn hàng đã hoàn thành.");
+        }
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Đơn hàng này đã bị hủy trước đó.");
+        }
+
+        // Restore stock for physical items
+        for (OrderItem item : order.getItems()) {
+            Product product = item.getProduct();
+            product.setStock(product.getStock() + item.getQuantity());
+            productRepository.save(product);
+        }
+
+        // Refund if the order was already paid via balance/auction
+        if ("AUCTION".equalsIgnoreCase(order.getPaymentMethod())
+                || "BALANCE".equalsIgnoreCase(order.getPaymentMethod())) {
+            User user = order.getUser();
+            user.setBalance(user.getBalance() + order.getTotalAmount().doubleValue());
+            userRepository.save(user);
+        }
+
+        if (order.getAuctionId() != null) {
+            auctionRepository.findById(order.getAuctionId()).ifPresent(auction -> {
+                auction.setStatus("cancelled");
+                auctionRepository.save(auction);
+            });
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelReason(reason.trim());
+        order.setCancelledBy(adminUsername);
+        Order saved = orderRepository.save(order);
+
+        Notification statusNotification = Notification.builder()
+                .user(order.getUser())
+                .title("Đơn hàng #" + order.getId() + " đã bị admin hủy ❌")
+                .content("Đơn hàng của bạn đã bị hủy bởi quản trị viên. Lý do: " + reason.trim())
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .build();

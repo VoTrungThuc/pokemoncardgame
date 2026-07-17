@@ -7,8 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:mobile/core/widgets/retry_network_image.dart';
-import 'package:mobile/features/order/models/order.dart';
-import 'package:mobile/features/auth/models/user.dart';
 import 'dart:math';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -289,6 +287,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 32),
 
+            // Change Password Button
+            ElevatedButton.icon(
+              onPressed: () => _showChangePasswordSheet(context, auth),
+              icon: const Icon(Icons.lock_reset, color: Colors.white, size: 16),
+              label: const Text(
+                'ĐỔI MẬT KHẢU',
+                style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.8),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0EA5E9),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                minimumSize: const Size(double.infinity, 52),
+                elevation: 0,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
             // Logout Button
             ElevatedButton.icon(
               onPressed: () {
@@ -323,6 +340,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showChangePasswordSheet(BuildContext context, AuthProvider auth) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => _ChangePasswordSheetContent(auth: auth),
     );
   }
 
@@ -676,6 +705,149 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChangePasswordSheetContent extends StatefulWidget {
+  final AuthProvider auth;
+  const _ChangePasswordSheetContent({required this.auth});
+
+  @override
+  State<_ChangePasswordSheetContent> createState() => _ChangePasswordSheetContentState();
+}
+
+class _ChangePasswordSheetContentState extends State<_ChangePasswordSheetContent> {
+  final _formKey = GlobalKey<FormState>();
+  final _oldController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _isSubmitting = false;
+  bool _obscureOld = true;
+  bool _obscureNew = true;
+
+  @override
+  void dispose() {
+    _oldController.dispose();
+    _newController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSubmitting = true);
+    try {
+      await ApiService.changePassword(
+        _oldController.text,
+        _newController.text,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đổi mật khẩu thành công.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  InputDecoration _decoration(String label, IconData icon, bool obscure, VoidCallback toggle) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      suffixIcon: IconButton(
+        icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
+        onPressed: toggle,
+      ),
+      border: const OutlineInputBorder(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        20,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                'Đổi mật khẩu',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _oldController,
+              obscureText: _obscureOld,
+              decoration: _decoration('Mật khẩu cũ', Icons.lock_outline, _obscureOld,
+                  () => setState(() => _obscureOld = !_obscureOld)),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Vui lòng nhập mật khẩu cũ';
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _newController,
+              obscureText: _obscureNew,
+              decoration: _decoration('Mật khẩu mới', Icons.lock, _obscureNew,
+                  () => setState(() => _obscureNew = !_obscureNew)),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Vui lòng nhập mật khẩu mới';
+                if (v.length < 6) return 'Mật khẩu mới phải có ít nhất 6 ký tự';
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _confirmController,
+              obscureText: _obscureNew,
+              decoration: _decoration('Xác nhận mật khẩu mới', Icons.lock, _obscureNew,
+                  () => setState(() => _obscureNew = !_obscureNew)),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Vui lòng xác nhận mật khẩu';
+                if (v != _newController.text) return 'Mật khẩu xác nhận không khớp';
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0EA5E9),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Xác nhận đổi mật khẩu'),
+              ),
+            ),
+          ],
         ),
       ),
     );

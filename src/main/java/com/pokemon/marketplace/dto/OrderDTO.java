@@ -26,5 +26,7 @@ public class OrderDTO {
     private OrderStatus status;
     private LocalDateTime createdAt;
     private Long auctionId;
+    private String cancelReason;
+    private String cancelledBy;
     private List<OrderItemDTO> items;
 }

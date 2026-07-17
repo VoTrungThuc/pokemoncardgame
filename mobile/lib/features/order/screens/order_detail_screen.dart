@@ -47,6 +47,81 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     super.dispose();
   }
 
+  bool get _canAdminCancel {
+    if (!widget.isAdmin) return false;
+    if (_order == null) return false;
+    final status = _order!.status;
+    return status != 'COMPLETED' && status != 'CANCELLED';
+  }
+
+  Future<void> _adminCancel() async {
+    final reasonController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hủy đơn hàng'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Vui lòng nhập lý do hủy đơn hàng:'),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Lý do hủy...',
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Lý do không được để trống';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Đóng'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: const Text('Xác nhận hủy'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    final reason = reasonController.text.trim();
+    setState(() => _saving = true);
+    try {
+      await ApiService.adminCancelOrder(_order!.id, reason);
+      await _loadOrder();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã hủy đơn hàng và gửi lý do cho người dùng.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   bool get _canEdit {
     if (widget.isAdmin || _order == null) return false;
     final status = _order!.status;
@@ -261,6 +336,34 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 style: const TextStyle(color: Colors.grey),
                               ),
                             ),
+                          if (_order!.status == 'CANCELLED' &&
+                              _order!.cancelReason != null &&
+                              _order!.cancelReason!.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(top: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.red.shade200),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _order!.cancelledBy != null
+                                        ? 'Lý do hủy (bởi ${_order!.cancelledBy}):'
+                                        : 'Lý do hủy:',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(_order!.cancelReason!),
+                                ],
+                              ),
+                            ),
                           const Divider(height: 24),
                           const Text(
                             'Sản phẩm',
@@ -371,6 +474,28 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                         child: CircularProgressIndicator(strokeWidth: 2),
                                       )
                                     : const Text('Cập nhật thông tin giao nhận'),
+                              ),
+                            ),
+                          if (isAdmin && _canAdminCancel)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: _saving ? null : _adminCancel,
+                                icon: const Icon(Icons.cancel),
+                                label: _saving
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('Hủy đơn hàng (cần lý do)'),
                               ),
                             ),
                           if (isAdmin)

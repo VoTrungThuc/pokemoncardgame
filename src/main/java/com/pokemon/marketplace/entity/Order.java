@@ -54,6 +54,12 @@ public class Order {
     @Field("auction_id")
     private Long auctionId;
 
+    @Field("cancel_reason")
+    private String cancelReason;
+
+    @Field("cancelled_by")
+    private String cancelledBy; // username of who cancelled (admin/user)
+
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 }

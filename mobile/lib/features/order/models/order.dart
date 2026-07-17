@@ -51,6 +51,8 @@ class Order {
   final String? paymentMethod;
   final String? note;
   final String? deliveryType;
+  final String? cancelReason;
+  final String? cancelledBy;
 
   Order({
     required this.id,
@@ -65,6 +67,8 @@ class Order {
     this.paymentMethod,
     this.note,
     this.deliveryType,
+    this.cancelReason,
+    this.cancelledBy,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -90,6 +94,8 @@ class Order {
       paymentMethod: json['paymentMethod'] ?? json['payment_method'],
       note: json['note'],
       deliveryType: json['deliveryType'] ?? json['delivery_type'],
+      cancelReason: json['cancelReason'] ?? json['cancel_reason'],
+      cancelledBy: json['cancelledBy'] ?? json['cancelled_by'],
     );
   }
 
@@ -107,6 +113,8 @@ class Order {
       'paymentMethod': paymentMethod,
       'note': note,
       'deliveryType': deliveryType,
+      'cancelReason': cancelReason,
+      'cancelledBy': cancelledBy,
     };
   }
 }

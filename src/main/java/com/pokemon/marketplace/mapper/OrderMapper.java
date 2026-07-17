@@ -29,6 +29,8 @@ public class OrderMapper {
                 .status(order.getStatus())
                 .createdAt(order.getCreatedAt())
                 .auctionId(order.getAuctionId())
+                .cancelReason(order.getCancelReason())
+                .cancelledBy(order.getCancelledBy())
                 .items(order.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()))
                 .build();
     }

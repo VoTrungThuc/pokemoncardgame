@@ -4,6 +4,7 @@ import com.pokemon.marketplace.dto.ApiResponse;
 import com.pokemon.marketplace.dto.RegisterRequest;
 import com.pokemon.marketplace.dto.UpdateRoleRequest;
 import com.pokemon.marketplace.dto.UserDTO;
+import com.pokemon.marketplace.dto.ChangePasswordRequest;
 import com.pokemon.marketplace.entity.User;
 import com.pokemon.marketplace.entity.enums.UserRole;
 import com.pokemon.marketplace.repository.UserRepository;
@@ -237,7 +238,7 @@ public class UserController {
         }
 
         User savedUser = userRepository.save(user);
-
+        
         UserDTO responseDTO = UserDTO.builder()
                 .id(savedUser.getId())
                 .username(savedUser.getUsername())
@@ -251,5 +252,25 @@ public class UserController {
                 .build();
         log.info("Profile updated successfully for user: {}", username);
         return ResponseEntity.ok(ApiResponse.success(responseDTO, "Profile updated successfully"));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không chính xác.");
+        }
+        if (request.getNewPassword().trim().length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword().trim()));
+        userRepository.save(user);
+        log.info("Password changed successfully for user: {}", username);
+        return ResponseEntity.ok(ApiResponse.success("Password updated", "Đổi mật khẩu thành công."));
     }
 }
