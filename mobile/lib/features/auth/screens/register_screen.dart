@@ -348,8 +348,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                               ),
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
+                                final value = val?.trim() ?? '';
+                                if (value.isEmpty) {
                                   return 'Vui lòng nhập tên đăng nhập';
+                                }
+                                if (value.length <= 1) {
+                                  return 'Tên đăng nhập phải có nhiều hơn 1 ký tự';
                                 }
                                 return null;
                               },

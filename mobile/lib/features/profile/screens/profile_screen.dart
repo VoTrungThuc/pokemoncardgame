@@ -557,6 +557,16 @@ class _EditProfileSheetContentState extends State<_EditProfileSheetContent> {
                   ),
                 ),
                 style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+                validator: (val) {
+                  final value = val?.trim() ?? '';
+                  if (value.isEmpty) {
+                    return 'Vui lòng nhập tên hiển thị';
+                  }
+                  if (value.length <= 1) {
+                    return 'Tên hiển thị phải có nhiều hơn 1 ký tự';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               const Text(
