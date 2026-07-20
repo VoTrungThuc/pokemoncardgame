@@ -352,8 +352,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 if (value.isEmpty) {
                                   return 'Vui lòng nhập tên đăng nhập';
                                 }
-                                if (value.length <= 1) {
-                                  return 'Tên đăng nhập phải có nhiều hơn 1 ký tự';
+                                if (value.length < 3) {
+                                  return 'Tên đăng nhập phải có ít nhất 3 ký tự';
                                 }
                                 return null;
                               },
@@ -526,6 +526,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                               ),
+                              validator: (val) {
+                                final value = val?.trim() ?? '';
+                                if (value.isNotEmpty && !RegExp(r'^\d{9,11}$').hasMatch(value)) {
+                                  return 'Số điện thoại phải từ 9 đến 11 chữ số';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 14),
 
