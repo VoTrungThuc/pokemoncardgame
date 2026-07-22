@@ -215,6 +215,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               minimumSize: Size.zero,
                             ),
                           ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(context, '/withdraw'),
+                            icon: const Icon(Icons.logout, size: 16, color: Colors.white),
+                            label: const Text(
+                              'RÚT TIỀN',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0EA5E9),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                              minimumSize: Size.zero,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -270,6 +292,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Sàn Trao Đổi Thẻ',
                 route: '/trades',
               ),
+            if (!isAdmin)
+              _buildProfileOption(
+                context,
+                icon: Icons.sell,
+                color: const Color(0xFFE53935),
+                title: 'Đăng Bán Thẻ Bài',
+                route: '/create-listing',
+              ),
             _buildProfileOption(
               context,
               icon: Icons.map,
@@ -284,6 +314,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: 'Thông Báo Hệ Thống',
               route: '/notifications',
             ),
+            if (!isAdmin)
+              _buildProfileOption(
+                context,
+                icon: Icons.history,
+                color: const Color(0xFF0EA5E9),
+                title: 'Lịch Sử Rút Tiền',
+                route: '/withdraw-history',
+              ),
+            if (isAdmin)
+              _buildProfileOption(
+                context,
+                icon: Icons.account_balance,
+                color: const Color(0xFFE53935),
+                title: 'Quản Lý Rút Tiền',
+                route: '/admin-withdraw',
+              ),
 
             const SizedBox(height: 32),
 

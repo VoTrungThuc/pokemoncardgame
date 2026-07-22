@@ -570,6 +570,18 @@ class ApiService {
     return [];
   }
 
+  static Future<Map<String, dynamic>> createListing(int cardId, double price) async {
+    final response = await post('/api/listings', {
+      'cardId': cardId,
+      'price': price,
+    });
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'];
+    }
+    throw Exception(data['message'] ?? 'Không thể đăng bán thẻ');
+  }
+
   // Trades
   static Future<List<Trade>> getUserTrades(int userId) async {
     final response = await get('/api/trades/user/$userId');
@@ -837,5 +849,70 @@ class ApiService {
       return User.fromJson(data['data']);
     }
     throw Exception(data['message'] ?? 'Cập nhật hồ sơ thất bại: ${data['message']}');
+  }
+
+  // Withdraw
+  static Future<Map<String, dynamic>> createWithdrawRequest(Map<String, dynamic> body) async {
+    final response = await post('/api/withdraw', body);
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'];
+    }
+    throw Exception(data['message'] ?? 'Không thể tạo yêu cầu rút tiền');
+  }
+
+  static Future<List<dynamic>> getMyWithdrawRequests() async {
+    final response = await get('/api/withdraw/my');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return _extractList(data['data']);
+      }
+    }
+    return [];
+  }
+
+  static Future<List<dynamic>> getAllWithdrawRequests() async {
+    final response = await get('/api/withdraw/all');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return _extractList(data['data']);
+      }
+    }
+    return [];
+  }
+
+  static Future<void> approveWithdrawRequest(int id) async {
+    final response = await put('/api/withdraw/$id/approve');
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Không thể duyệt yêu cầu');
+    }
+  }
+
+  static Future<void> completeWithdrawRequest(int id) async {
+    final response = await put('/api/withdraw/$id/complete');
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Không thể hoàn tất yêu cầu');
+    }
+  }
+
+  static Future<void> rejectWithdrawRequest(int id, String reason) async {
+    final response = await put('/api/withdraw/$id/reject', {'reason': reason});
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Không thể từ chối yêu cầu');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getStoreBankInfo() async {
+    final response = await get('/api/withdraw/store-bank');
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'];
+    }
+    throw Exception(data['message'] ?? 'Không thể lấy thông tin ngân hàng');
   }
 }

@@ -22,6 +22,10 @@ import 'package:mobile/features/notification/screens/notification_list_screen.da
 import 'package:mobile/features/auction/screens/auction_detail_screen.dart';
 import 'package:mobile/features/auction/screens/sales_stats_screen.dart';
 import 'package:mobile/features/auction/screens/create_auction_screen.dart';
+import 'package:mobile/features/trade/screens/create_listing_screen.dart';
+import 'package:mobile/features/profile/screens/withdraw_screen.dart';
+import 'package:mobile/features/profile/screens/withdraw_history_screen.dart';
+import 'package:mobile/features/profile/screens/admin_withdraw_screen.dart';
 import 'package:mobile/core/services/notification_service.dart';
 import 'package:mobile/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -87,6 +91,10 @@ class MyApp extends StatelessWidget {
               AppRoutes.notifications: (context) => const NotificationListScreen(),
               AppRoutes.salesStats: (context) => const SalesStatsScreen(),
               AppRoutes.createAuction: (context) => const CreateAuctionScreen(),
+              AppRoutes.createListing: (context) => const CreateListingScreen(),
+              AppRoutes.withdraw: (context) => const WithdrawScreen(),
+              AppRoutes.withdrawHistory: (context) => const WithdrawHistoryScreen(),
+              AppRoutes.adminWithdraw: (context) => const AdminWithdrawScreen(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == AppRoutes.productDetail) {
