@@ -48,7 +48,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   bool get _canAdminCancel {
-    if (!widget.isAdmin) return false;
     if (_order == null) return false;
     final status = _order!.status;
     return status != 'COMPLETED' && status != 'CANCELLED';
