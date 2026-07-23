@@ -6,6 +6,7 @@ services:
     image: mongo:6.0
     container_name: pokemon_mongodb
     restart: unless-stopped
+    command: mongod --wiredTigerCacheSizeGB 0.25
     ports:
       - "27017:27017"
     volumes:

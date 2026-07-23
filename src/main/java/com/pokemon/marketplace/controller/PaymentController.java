@@ -39,20 +39,19 @@ public class PaymentController {
     }
 
     @GetMapping("/vnpay-callback")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> vnpayCallback(
+    public ResponseEntity<Void> vnpayCallback(
             @RequestParam Map<String, String> params) {
         log.info("REST request to process VNPay payment callback");
         boolean success = paymentService.processCallback(params);
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", success);
-        result.put("orderId", params.get("vnp_TxnRef"));
-        result.put("responseCode", params.get("vnp_ResponseCode"));
+        String orderId = params.get("vnp_TxnRef");
+        String responseCode = params.get("vnp_ResponseCode");
         
-        if (success) {
-            return ResponseEntity.ok(ApiResponse.success(result, "Thanh toán đơn hàng thành công!"));
-        } else {
-            return ResponseEntity.ok(ApiResponse.success(result, "Thanh toán thất bại hoặc đã bị hủy."));
-        }
+        String redirectUrl = String.format("pokemonapp://payment-callback?success=%b&orderId=%s&responseCode=%s", 
+                success, orderId, responseCode);
+                
+        return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                .header(org.springframework.http.HttpHeaders.LOCATION, redirectUrl)
+                .build();
     }
 
     @GetMapping("/vnpay-ipn")
