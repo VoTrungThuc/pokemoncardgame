@@ -35,6 +35,7 @@ services:
       - VNP_PAY_URL=${VNP_PAY_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
       - VNP_RETURN_URL=${VNP_RETURN_URL:-http://localhost:8080/api/payment/vnpay-callback}
       - MANAGEMENT_HEALTH_MAIL_ENABLED=false
+      - JAVA_OPTS=-Xmx300m -XX:+UseG1GC
     depends_on:
       mongodb:
         condition: service_healthy

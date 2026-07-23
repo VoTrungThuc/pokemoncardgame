@@ -11,7 +11,7 @@ After editing code, automatically build without being asked:
   - Ask before committing/pushing backend (push triggers production deploy).
 
 ## Environment
-- Repo: `D:\PRM-pokemon`, GitHub `https://github.com/TranHoangTrungHieu/PRM-project.git`, branch `main`.
+- Repo: `D:\PRM-pokemon`, GitHub `https://github.com/VoTrungThuc/pokemoncardgame.git`, branch `main`.
 - VPS `129.80.105.58` (ubuntu, SSH key `C:\Users\ASUS\Downloads\ssh-key-2026-07-12 (3).key`), container `pokemon_backend`.
-- Mobile `baseUrl` = `http://129.80.105.58`.
+- Mobile `baseUrl` = `http://13.236.183.16:8080`.
 - MongoDB backend: new fields need no migration.

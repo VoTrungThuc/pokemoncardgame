@@ -20,7 +20,7 @@ public class UploadController {
     @Value("${app.upload.dir:/app/uploads}")
     private String uploadDir;
 
-    @Value("${app.upload.base-url:http://129.80.105.58}")
+    @Value("${app.upload.base-url:http://13.236.183.16:8080}")
     private String baseUrl;
 
     @PostMapping("/image")
